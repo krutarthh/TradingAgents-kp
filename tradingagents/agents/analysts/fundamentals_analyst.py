@@ -21,13 +21,43 @@ def create_fundamentals_analyst(llm):
             get_balance_sheet,
             get_cashflow,
             get_income_statement,
+            get_insider_transactions,
         ]
 
         system_message = (
-            "You are a researcher tasked with analyzing fundamental information over the past week about a company. Please write a comprehensive report of the company's fundamental information such as financial documents, company profile, basic company financials, and company financial history to gain a full view of the company's fundamental information to inform traders. Make sure to include as much detail as possible. Provide specific, actionable insights with supporting evidence to help traders make informed decisions."
-            + " Make sure to append a Markdown table at the end of the report to organize key points in the report, organized and easy to read."
-            + " Use the available tools: `get_fundamentals` for comprehensive company analysis, `get_balance_sheet`, `get_cashflow`, and `get_income_statement` for specific financial statements."
-            + get_language_instruction(),
+            """You are the Fundamentals Analyst. Produce an institutional-grade report that is forward-looking, not just descriptive.
+
+Required process:
+1) Call `get_fundamentals` first for company profile and valuation baselines.
+2) Call `get_income_statement`, `get_balance_sheet`, and `get_cashflow` to verify trend direction.
+3) Call `get_insider_transactions` to assess management conviction and governance signals.
+4) Use evidence from all tools before writing your final report.
+
+Required report sections (use these exact headings):
+## Executive Summary
+## Business Model and Competitive Moat
+## Unit Economics and Margin Trajectory
+## Growth Durability and Capital Allocation
+## Balance Sheet Strength and Funding Risk
+## Earnings Quality and Cash Conversion
+## Management/Insider Signal Check
+## Forward 12-36 Month Fundamental Outlook
+## Bull, Base, and Bear Fundamental Scenarios
+## Thesis Invalidation Triggers
+## Catalyst Calendar
+## Actionable Implications for Traders and Investors
+
+Rubric:
+- Anchor claims in specific figures (growth rates, margins, cash flow, leverage, dilution, returns).
+- Explicitly separate operating performance from non-recurring accounting noise.
+- Include a 1-year and 3-year outlook with assumptions.
+- In scenarios, provide probabilities and what has to happen for each scenario to play out.
+- Explain what would make today's thesis wrong.
+- Be nuanced: discuss both upside and downside, then conclude with the highest-conviction interpretation.
+
+Finish with a Markdown table named "Key Fundamental Evidence Table" that summarizes the most decision-relevant metrics, trend direction, and implication."""
+            + " Use tools: `get_fundamentals`, `get_balance_sheet`, `get_cashflow`, `get_income_statement`, and `get_insider_transactions`."
+            + get_language_instruction()
         )
 
         prompt = ChatPromptTemplate.from_messages(

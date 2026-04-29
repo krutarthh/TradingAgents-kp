@@ -1,5 +1,12 @@
 import os
 
+try:
+    from dotenv import load_dotenv
+
+    load_dotenv()
+except ImportError:
+    pass
+
 _TRADINGAGENTS_HOME = os.path.join(os.path.expanduser("~"), ".tradingagents")
 
 DEFAULT_CONFIG = {
@@ -42,9 +49,14 @@ DEFAULT_CONFIG = {
         "technical_indicators": "yfinance",  # Options: alpha_vantage, yfinance
         "fundamental_data": "yfinance",      # Options: alpha_vantage, yfinance
         "news_data": "yfinance",             # Options: alpha_vantage, yfinance
+        "forward_data": "yfinance",          # Options: yfinance
     },
     # Tool-level configuration (takes precedence over category-level)
     "tool_vendors": {
         # Example: "get_stock_data": "alpha_vantage",  # Override category default
     },
+    # LLM context: cap each analyst report inlined in bull/bear/risk prompts (None = no cap)
+    "max_chars_per_report_in_debate": None,
+    # Excerpt length per report in Research Manager / Trader evidence digest
+    "analyst_evidence_digest_max_chars_per_report": 1200,
 }

@@ -21,7 +21,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 # ---------------------------------------------------------------------------
@@ -88,17 +88,48 @@ class ResearchPlan(BaseModel):
             "including position sizing guidance consistent with the rating."
         ),
     )
+    secular_themes: list[str] = Field(
+        default_factory=list,
+        description=(
+            "Named secular themes driving the recommendation (for example: "
+            "AI capex cycle, energy transition, deglobalization, demographic aging)."
+        ),
+    )
+    key_catalysts: list[str] = Field(
+        default_factory=list,
+        description="Top near/medium-term catalysts that could move the thesis materially.",
+    )
+    key_risks: list[str] = Field(
+        default_factory=list,
+        description="Top risks that could undermine the recommendation.",
+    )
+    multi_horizon_view: str = Field(
+        default="",
+        description=(
+            "A concise horizon-based view covering tactical (0-6 weeks), "
+            "12-month, and 36-month outlook."
+        ),
+    )
 
 
 def render_research_plan(plan: ResearchPlan) -> str:
     """Render a ResearchPlan to markdown for storage and the trader's prompt context."""
-    return "\n".join([
+    parts = [
         f"**Recommendation**: {plan.recommendation.value}",
         "",
         f"**Rationale**: {plan.rationale}",
         "",
         f"**Strategic Actions**: {plan.strategic_actions}",
-    ])
+    ]
+    if plan.secular_themes:
+        parts.extend(["", f"**Secular Themes**: {', '.join(plan.secular_themes)}"])
+    if plan.key_catalysts:
+        parts.extend(["", f"**Key Catalysts**: {', '.join(plan.key_catalysts)}"])
+    if plan.key_risks:
+        parts.extend(["", f"**Key Risks**: {', '.join(plan.key_risks)}"])
+    if plan.multi_horizon_view:
+        parts.extend(["", f"**Multi-Horizon View**: {plan.multi_horizon_view}"])
+    return "\n".join(parts)
 
 
 # ---------------------------------------------------------------------------
@@ -204,6 +235,64 @@ class PortfolioDecision(BaseModel):
         default=None,
         description="Optional recommended holding period, e.g. '3-6 months'.",
     )
+    bull_case_target: Optional[float] = Field(
+        default=None,
+        description="Optional bull-case price target in quote currency.",
+    )
+    base_case_target: Optional[float] = Field(
+        default=None,
+        description="Optional base-case price target in quote currency.",
+    )
+    bear_case_target: Optional[float] = Field(
+        default=None,
+        description="Optional bear-case price target in quote currency.",
+    )
+    bull_probability: float = Field(
+        default=0.25,
+        ge=0.0,
+        le=1.0,
+        description="Probability of the bull case, between 0 and 1.",
+    )
+    base_probability: float = Field(
+        default=0.50,
+        ge=0.0,
+        le=1.0,
+        description="Probability of the base case, between 0 and 1.",
+    )
+    bear_probability: float = Field(
+        default=0.25,
+        ge=0.0,
+        le=1.0,
+        description="Probability of the bear case, between 0 and 1.",
+    )
+    secular_themes: list[str] = Field(
+        default_factory=list,
+        description="Named secular themes used in the final decision.",
+    )
+    key_catalysts: list[str] = Field(
+        default_factory=list,
+        description="Top catalysts that can shift the rating.",
+    )
+    key_risks: list[str] = Field(
+        default_factory=list,
+        description="Top risks that can force de-risking.",
+    )
+    time_horizons: list[str] = Field(
+        default_factory=list,
+        description=(
+            "Explicit horizon labels used in analysis (for example: "
+            "0-6 weeks, 12 months, 36 months)."
+        ),
+    )
+
+    @model_validator(mode="after")
+    def validate_probability_sum(self):
+        total = self.bull_probability + self.base_probability + self.bear_probability
+        if abs(total - 1.0) > 0.02:
+            raise ValueError(
+                "bull_probability + base_probability + bear_probability must sum to 1.0 (+/-0.02)"
+            )
+        return self
 
 
 def render_pm_decision(decision: PortfolioDecision) -> str:
@@ -225,4 +314,35 @@ def render_pm_decision(decision: PortfolioDecision) -> str:
         parts.extend(["", f"**Price Target**: {decision.price_target}"])
     if decision.time_horizon:
         parts.extend(["", f"**Time Horizon**: {decision.time_horizon}"])
+    if (
+        decision.bull_case_target is not None
+        or decision.base_case_target is not None
+        or decision.bear_case_target is not None
+    ):
+        parts.extend(
+            [
+                "",
+                "**Scenario Targets**: "
+                f"Bull={decision.bull_case_target if decision.bull_case_target is not None else 'N/A'}, "
+                f"Base={decision.base_case_target if decision.base_case_target is not None else 'N/A'}, "
+                f"Bear={decision.bear_case_target if decision.bear_case_target is not None else 'N/A'}",
+            ]
+        )
+    parts.extend(
+        [
+            "",
+            "**Scenario Probabilities**: "
+            f"Bull={decision.bull_probability:.2f}, "
+            f"Base={decision.base_probability:.2f}, "
+            f"Bear={decision.bear_probability:.2f}",
+        ]
+    )
+    if decision.secular_themes:
+        parts.extend(["", f"**Secular Themes**: {', '.join(decision.secular_themes)}"])
+    if decision.key_catalysts:
+        parts.extend(["", f"**Key Catalysts**: {', '.join(decision.key_catalysts)}"])
+    if decision.key_risks:
+        parts.extend(["", f"**Key Risks**: {', '.join(decision.key_risks)}"])
+    if decision.time_horizons:
+        parts.extend(["", f"**Time Horizons**: {', '.join(decision.time_horizons)}"])
     return "\n".join(parts)

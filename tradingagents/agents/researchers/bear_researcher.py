@@ -1,5 +1,8 @@
 
 
+from tradingagents.agents.utils.agent_utils import get_debate_context_reports
+
+
 def create_bear_researcher(llm):
     def bear_node(state) -> dict:
         investment_debate_state = state["investment_debate_state"]
@@ -7,30 +10,44 @@ def create_bear_researcher(llm):
         bear_history = investment_debate_state.get("bear_history", "")
 
         current_response = investment_debate_state.get("current_response", "")
-        market_research_report = state["market_report"]
-        sentiment_report = state["sentiment_report"]
-        news_report = state["news_report"]
-        fundamentals_report = state["fundamentals_report"]
+        (
+            market_research_report,
+            sentiment_report,
+            news_report,
+            fundamentals_report,
+            forward_report,
+        ) = get_debate_context_reports(state)
 
-        prompt = f"""You are a Bear Analyst making the case against investing in the stock. Your goal is to present a well-reasoned argument emphasizing risks, challenges, and negative indicators. Leverage the provided research and data to highlight potential downsides and counter bullish arguments effectively.
+        prompt = f"""You are the Bear Researcher. Build the strongest possible downside thesis grounded in evidence.
 
-Key points to focus on:
+Rules:
+- Focus on fragility, downside convexity, and probability-weighted loss paths.
+- Attack the strongest bull claim directly before introducing new risks.
+- Debate in natural conversational language while remaining quantitative.
 
-- Risks and Challenges: Highlight factors like market saturation, financial instability, or macroeconomic threats that could hinder the stock's performance.
-- Competitive Weaknesses: Emphasize vulnerabilities such as weaker market positioning, declining innovation, or threats from competitors.
-- Negative Indicators: Use evidence from financial data, market trends, or recent adverse news to support your position.
-- Bull Counterpoints: Critically analyze the bull argument with specific data and sound reasoning, exposing weaknesses or over-optimistic assumptions.
-- Engagement: Present your argument in a conversational style, directly engaging with the bull analyst's points and debating effectively rather than simply listing facts.
+Required structure (use section labels in your response):
+1) Core Bear Thesis
+2) 1Y Downside Outlook (near-term risk pathways)
+3) 3Y Structural Risk Outlook (moat decay, unit economics, macro pressure)
+4) 5Y Secular Bear Case (regime shifts, disruption, policy/geopolitics)
+5) Named Scenario Risk Mapping (at least two scenarios and why they hurt the stock)
+6) Rebuttal to Bull's Strongest Point
+7) What Would Invalidate the Bear Thesis
+
+Output requirements:
+- Include at least one quantified downside claim in each horizon section.
+- Include a probability estimate for your base bear path.
+- Separate temporary drawdown risks from thesis-breaking risks.
+- Explicitly identify where valuation expectations are vulnerable to compression.
 
 Resources available:
-
 Market research report: {market_research_report}
 Social media sentiment report: {sentiment_report}
 Latest world affairs news: {news_report}
 Company fundamentals report: {fundamentals_report}
+Forward scenarios report: {forward_report}
 Conversation history of the debate: {history}
 Last bull argument: {current_response}
-Use this information to deliver a compelling bear argument, refute the bull's claims, and engage in a dynamic debate that demonstrates the risks and weaknesses of investing in the stock.
 """
 
         response = llm.invoke(prompt)

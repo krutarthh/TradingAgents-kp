@@ -10,6 +10,16 @@ from .y_finance import (
     get_income_statement as get_yfinance_income_statement,
     get_insider_transactions as get_yfinance_insider_transactions,
 )
+from .yfinance_forward import (
+    get_analyst_estimates_yfinance,
+    get_macro_regime_yfinance,
+    get_macro_regime_yfinance_complement,
+    get_options_implied_move_yfinance,
+    get_peer_comparables_yfinance,
+    get_sector_etf_trends_yfinance,
+)
+from .fred_macro import get_macro_regime_fred
+from .config import DataVendorSkipped, get_config
 from .yfinance_news import get_news_yfinance, get_global_news_yfinance
 from .alpha_vantage import (
     get_stock as get_alpha_vantage_stock,
@@ -23,9 +33,6 @@ from .alpha_vantage import (
     get_global_news as get_alpha_vantage_global_news,
 )
 from .alpha_vantage_common import AlphaVantageRateLimitError
-
-# Configuration and routing logic
-from .config import get_config
 
 # Tools organized by category
 TOOLS_CATEGORIES = {
@@ -57,13 +64,34 @@ TOOLS_CATEGORIES = {
             "get_global_news",
             "get_insider_transactions",
         ]
-    }
+    },
+    "forward_data": {
+        "description": "Forward-looking estimates, macro regime, and peer comparables",
+        "tools": [
+            "get_analyst_estimates",
+            "get_peer_comparables",
+            "get_macro_regime",
+            "get_sector_etf_trends",
+            "get_options_implied_move",
+        ],
+    },
 }
 
 VENDOR_LIST = [
     "yfinance",
     "alpha_vantage",
 ]
+
+
+def get_macro_regime_routed(curr_date: str) -> str:
+    """Official FRED macro plus yfinance oil/gold/credit/DXY proxies when FRED_API_KEY is set; otherwise full yfinance macro."""
+    try:
+        fred_block = get_macro_regime_fred(curr_date)
+    except DataVendorSkipped:
+        return get_macro_regime_yfinance(curr_date)
+    complement = get_macro_regime_yfinance_complement(curr_date)
+    return f"{fred_block}\n\n{complement}"
+
 
 # Mapping of methods to their vendor-specific implementations
 VENDOR_METHODS = {
@@ -107,7 +135,24 @@ VENDOR_METHODS = {
         "alpha_vantage": get_alpha_vantage_insider_transactions,
         "yfinance": get_yfinance_insider_transactions,
     },
+    # forward_data
+    "get_analyst_estimates": {
+        "yfinance": get_analyst_estimates_yfinance,
+    },
+    "get_peer_comparables": {
+        "yfinance": get_peer_comparables_yfinance,
+    },
+    "get_macro_regime": {
+        "yfinance": get_macro_regime_routed,
+    },
+    "get_sector_etf_trends": {
+        "yfinance": get_sector_etf_trends_yfinance,
+    },
+    "get_options_implied_move": {
+        "yfinance": get_options_implied_move_yfinance,
+    },
 }
+
 
 def get_category_for_method(method: str) -> str:
     """Get the category that contains the specified method."""
@@ -157,6 +202,8 @@ def route_to_vendor(method: str, *args, **kwargs):
         try:
             return impl_func(*args, **kwargs)
         except AlphaVantageRateLimitError:
-            continue  # Only rate limits trigger fallback
+            continue
+        except DataVendorSkipped:
+            continue
 
     raise RuntimeError(f"No available vendor for '{method}'")

@@ -31,6 +31,7 @@ def create_portfolio_manager(llm):
         risk_debate_state = state["risk_debate_state"]
         research_plan = state["investment_plan"]
         trader_plan = state["trader_investment_plan"]
+        forward_report = state.get("forward_report", "")
 
         past_context = state.get("past_context", "")
         lessons_line = (
@@ -56,10 +57,20 @@ def create_portfolio_manager(llm):
 - Research Manager's investment plan: **{research_plan}**
 - Trader's transaction proposal: **{trader_plan}**
 {lessons_line}
+- Forward scenarios report: **{forward_report}**
 **Risk Analysts Debate History:**
 {history}
 
 ---
+
+Output requirements:
+- Deliver both tactical and strategic views:
+  - Tactical (0-6 weeks): positioning, entries, risk controls
+  - Strategic (12-36 months): thesis durability and secular fit
+- Use scenario-aware reasoning; name scenarios that most influence the rating.
+- Ground conclusions in analyst evidence, not generic market commentary.
+- Explicitly state what would trigger a rating upgrade/downgrade.
+- Include sector relative-value framing versus alternatives where possible.
 
 Be decisive and ground every conclusion in specific evidence from the analysts.{get_language_instruction()}"""
 

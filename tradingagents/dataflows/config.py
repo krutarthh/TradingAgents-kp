@@ -1,6 +1,10 @@
 import tradingagents.default_config as default_config
 from typing import Dict, Optional
 
+
+class DataVendorSkipped(Exception):
+    """Raised when a data vendor cannot run (e.g. missing API key); router may try the next."""
+
 # Use default config but allow it to be overridden
 _config: Optional[Dict] = None
 

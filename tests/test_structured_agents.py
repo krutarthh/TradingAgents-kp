@@ -11,8 +11,15 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from tradingagents.agents.managers.portfolio_manager import create_portfolio_manager
 from tradingagents.agents.managers.research_manager import create_research_manager
+from tradingagents.agents.researchers.bear_researcher import create_bear_researcher
+from tradingagents.agents.researchers.bull_researcher import create_bull_researcher
+from tradingagents.agents.risk_mgmt.aggressive_debator import create_aggressive_debator
+from tradingagents.agents.risk_mgmt.conservative_debator import create_conservative_debator
+from tradingagents.agents.risk_mgmt.neutral_debator import create_neutral_debator
 from tradingagents.agents.schemas import (
+    PortfolioDecision,
     PortfolioRating,
     ResearchPlan,
     TraderAction,
@@ -86,6 +93,47 @@ class TestRenderResearchPlan:
             md = render_research_plan(p)
             assert f"**Recommendation**: {rating.value}" in md
 
+    def test_extended_fields_render_when_present(self):
+        p = ResearchPlan(
+            recommendation=PortfolioRating.BUY,
+            rationale="Thesis improving.",
+            strategic_actions="Scale over two tranches.",
+            secular_themes=["AI capex", "reshoring"],
+            key_catalysts=["earnings beat", "guidance raise"],
+            key_risks=["capex slowdown"],
+            multi_horizon_view="0-6w constructive; 12m positive; 36m high upside with volatility.",
+        )
+        md = render_research_plan(p)
+        assert "**Secular Themes**: AI capex, reshoring" in md
+        assert "**Key Catalysts**: earnings beat, guidance raise" in md
+        assert "**Key Risks**: capex slowdown" in md
+        assert "**Multi-Horizon View**:" in md
+
+
+@pytest.mark.unit
+class TestPortfolioDecisionSchema:
+    def test_probability_sum_validator_accepts_one(self):
+        decision = PortfolioDecision(
+            rating=PortfolioRating.OVERWEIGHT,
+            executive_summary="Summary.",
+            investment_thesis="Thesis.",
+            bull_probability=0.3,
+            base_probability=0.5,
+            bear_probability=0.2,
+        )
+        assert decision.base_probability == 0.5
+
+    def test_probability_sum_validator_rejects_invalid_sum(self):
+        with pytest.raises(ValueError):
+            PortfolioDecision(
+                rating=PortfolioRating.HOLD,
+                executive_summary="Summary.",
+                investment_thesis="Thesis.",
+                bull_probability=0.6,
+                base_probability=0.3,
+                bear_probability=0.3,
+            )
+
 
 # ---------------------------------------------------------------------------
 # Trader agent: structured happy path + fallback
@@ -96,6 +144,7 @@ def _make_trader_state():
     return {
         "company_of_interest": "NVDA",
         "investment_plan": "**Recommendation**: Buy\n**Rationale**: ...\n**Strategic Actions**: ...",
+        "forward_report": "Forward scenarios include AI_CAPEX_ACCELERATION and RATE_CUT_CYCLE.",
     }
 
 
@@ -146,6 +195,7 @@ class TestTraderAgent:
         # The investment plan is in the user message of the captured prompt.
         prompt = captured["prompt"]
         assert any("Proposed Investment Plan" in m["content"] for m in prompt)
+        assert any("Forward Scenarios and Secular Outlook" in m["content"] for m in prompt)
 
     def test_falls_back_to_freetext_when_structured_unavailable(self):
         plain_response = (
@@ -168,6 +218,7 @@ class TestTraderAgent:
 def _make_rm_state():
     return {
         "company_of_interest": "NVDA",
+        "forward_report": "Forward report with bull/base/bear scenarios.",
         "investment_debate_state": {
             "history": "Bull and bear arguments here.",
             "bull_history": "Bull says...",
@@ -221,6 +272,7 @@ class TestResearchManagerAgent:
         prompt = captured["prompt"]
         for tier in ("Buy", "Overweight", "Hold", "Underweight", "Sell"):
             assert f"**{tier}**" in prompt, f"missing {tier} in prompt"
+        assert "Forward Scenarios Report" in prompt
 
     def test_falls_back_to_freetext_when_structured_unavailable(self):
         plain_response = "**Recommendation**: Sell\n\n**Rationale**: ...\n\n**Strategic Actions**: ..."
@@ -230,3 +282,92 @@ class TestResearchManagerAgent:
         rm = create_research_manager(llm)
         result = rm(_make_rm_state())
         assert result["investment_plan"] == plain_response
+
+
+@pytest.mark.unit
+class TestForwardReportPlumbingInPrompts:
+    def test_bull_bear_and_risk_prompts_include_forward_report(self):
+        base_state = {
+            "investment_debate_state": {
+                "history": "Debate history.",
+                "bull_history": "",
+                "bear_history": "",
+                "current_response": "Counterpoint",
+                "judge_decision": "",
+                "count": 1,
+            },
+            "risk_debate_state": {
+                "history": "Risk history.",
+                "aggressive_history": "",
+                "conservative_history": "",
+                "neutral_history": "",
+                "latest_speaker": "Aggressive",
+                "current_aggressive_response": "Aggressive view",
+                "current_conservative_response": "Conservative view",
+                "current_neutral_response": "Neutral view",
+                "judge_decision": "",
+                "count": 1,
+            },
+            "market_report": "market",
+            "sentiment_report": "sentiment",
+            "news_report": "news",
+            "fundamentals_report": "fundamentals",
+            "forward_report": "FORWARD_REPORT_SENTINEL",
+            "trader_investment_plan": "Trader plan",
+        }
+
+        llm = MagicMock()
+        llm.invoke.return_value = MagicMock(content="ok")
+
+        create_bull_researcher(llm)(base_state)
+        assert "FORWARD_REPORT_SENTINEL" in llm.invoke.call_args_list[-1].args[0]
+
+        create_bear_researcher(llm)(base_state)
+        assert "FORWARD_REPORT_SENTINEL" in llm.invoke.call_args_list[-1].args[0]
+
+        create_aggressive_debator(llm)(base_state)
+        assert "FORWARD_REPORT_SENTINEL" in llm.invoke.call_args_list[-1].args[0]
+
+        create_conservative_debator(llm)(base_state)
+        assert "FORWARD_REPORT_SENTINEL" in llm.invoke.call_args_list[-1].args[0]
+
+        create_neutral_debator(llm)(base_state)
+        assert "FORWARD_REPORT_SENTINEL" in llm.invoke.call_args_list[-1].args[0]
+
+    def test_portfolio_manager_prompt_includes_forward_report(self):
+        captured = {}
+        decision = PortfolioDecision(
+            rating=PortfolioRating.HOLD,
+            executive_summary="Summary.",
+            investment_thesis="Thesis.",
+        )
+        structured = MagicMock()
+        structured.invoke.side_effect = lambda prompt: (
+            captured.__setitem__("prompt", prompt) or decision
+        )
+        llm = MagicMock()
+        llm.with_structured_output.return_value = structured
+        pm = create_portfolio_manager(llm)
+
+        state = {
+            "company_of_interest": "NVDA",
+            "risk_debate_state": {
+                "history": "Risk debate history",
+                "aggressive_history": "",
+                "conservative_history": "",
+                "neutral_history": "",
+                "latest_speaker": "Neutral",
+                "current_aggressive_response": "",
+                "current_conservative_response": "",
+                "current_neutral_response": "",
+                "judge_decision": "",
+                "count": 3,
+            },
+            "investment_plan": "Investment plan",
+            "trader_investment_plan": "Trader plan",
+            "forward_report": "FORWARD_REPORT_SENTINEL",
+            "past_context": "",
+        }
+
+        pm(state)
+        assert "FORWARD_REPORT_SENTINEL" in captured["prompt"]

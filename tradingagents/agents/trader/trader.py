@@ -7,7 +7,10 @@ import functools
 from langchain_core.messages import AIMessage
 
 from tradingagents.agents.schemas import TraderProposal, render_trader_proposal
-from tradingagents.agents.utils.agent_utils import build_instrument_context
+from tradingagents.agents.utils.agent_utils import (
+    build_analyst_evidence_digest,
+    build_instrument_context,
+)
 from tradingagents.agents.utils.structured import (
     bind_structured,
     invoke_structured_or_freetext,
@@ -21,6 +24,8 @@ def create_trader(llm):
         company_name = state["company_of_interest"]
         instrument_context = build_instrument_context(company_name)
         investment_plan = state["investment_plan"]
+        forward_report = state.get("forward_report", "")
+        evidence_digest = build_analyst_evidence_digest(state)
 
         messages = [
             {
@@ -39,6 +44,12 @@ def create_trader(llm):
                     f"insights from current technical market trends, macroeconomic indicators, and "
                     f"social media sentiment. Use this plan as a foundation for evaluating your next "
                     f"trading decision.\n\nProposed Investment Plan: {investment_plan}\n\n"
+                    f"{evidence_digest}\n\n"
+                    f"Forward Scenarios and Secular Outlook (full forward report if any): {forward_report}\n\n"
+                    "Requirements:\n"
+                    "- Provide a tactical decision for the next 0-6 weeks.\n"
+                    "- Ensure it is consistent with the 12-36 month thesis context.\n"
+                    "- Call out explicit invalidation conditions and risk controls.\n"
                     f"Leverage these insights to make an informed and strategic decision."
                 ),
             },

@@ -5,7 +5,34 @@ import json
 from datetime import datetime
 from io import StringIO
 
+from tradingagents.dataflows.api_file_cache import cache_get_json, cache_set_json, stable_hash
+
 API_BASE_URL = "https://www.alphavantage.co/query"
+
+
+def _av_cache_key(function_name: str, api_params: dict) -> str:
+    items = tuple(
+        (k, api_params[k])
+        for k in sorted(api_params.keys())
+        if k != "apikey"
+    )
+    return stable_hash((function_name, items))
+
+
+def _av_ttl_seconds(function_name: str) -> int:
+    if function_name in (
+        "OVERVIEW",
+        "BALANCE_SHEET",
+        "CASH_FLOW",
+        "INCOME_STATEMENT",
+        "INSIDER_TRANSACTIONS",
+    ):
+        return 86400
+    if function_name == "NEWS_SENTIMENT":
+        return 3600
+    if function_name.startswith("TIME_SERIES"):
+        return 14400
+    return 14400
 
 def get_api_key() -> str:
     """Retrieve the API key for Alpha Vantage from environment variables."""
@@ -62,23 +89,32 @@ def _make_api_request(function_name: str, params: dict) -> dict | str:
     elif "entitlement" in api_params:
         # Remove entitlement if it's None or empty
         api_params.pop("entitlement", None)
-    
+
+    cache_key = _av_cache_key(function_name, api_params)
+    ttl = _av_ttl_seconds(function_name)
+    cached = cache_get_json("alpha_vantage", cache_key, ttl)
+    if cached is not None and isinstance(cached, dict) and "body" in cached:
+        return cached["body"]
+
     response = requests.get(API_BASE_URL, params=api_params)
     response.raise_for_status()
 
     response_text = response.text
-    
-    # Check if response is JSON (error responses are typically JSON)
+
+    should_cache = True
     try:
         response_json = json.loads(response_text)
-        # Check for rate limit error
         if "Information" in response_json:
             info_message = response_json["Information"]
             if "rate limit" in info_message.lower() or "api key" in info_message.lower():
                 raise AlphaVantageRateLimitError(f"Alpha Vantage rate limit exceeded: {info_message}")
+        if "Error Message" in response_json:
+            should_cache = False
     except json.JSONDecodeError:
-        # Response is not JSON (likely CSV data), which is normal
         pass
+
+    if should_cache:
+        cache_set_json("alpha_vantage", cache_key, {"body": response_text})
 
     return response_text
 

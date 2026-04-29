@@ -18,6 +18,7 @@ config["data_vendors"] = {
     "technical_indicators": "yfinance",      # Options: alpha_vantage, yfinance
     "fundamental_data": "yfinance",          # Options: alpha_vantage, yfinance
     "news_data": "yfinance",                 # Options: alpha_vantage, yfinance
+    "forward_data": "yfinance",              # Options: yfinance
 }
 
 # Initialize with custom config

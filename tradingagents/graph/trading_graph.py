@@ -35,7 +35,12 @@ from tradingagents.agents.utils.agent_utils import (
     get_income_statement,
     get_news,
     get_insider_transactions,
-    get_global_news
+    get_global_news,
+    get_analyst_estimates,
+    get_peer_comparables,
+    get_macro_regime,
+    get_sector_etf_trends,
+    get_options_implied_move,
 )
 
 from .checkpointer import checkpoint_step, clear_checkpoint, get_checkpointer, thread_id
@@ -51,7 +56,7 @@ class TradingAgentsGraph:
 
     def __init__(
         self,
-        selected_analysts=["market", "social", "news", "fundamentals"],
+        selected_analysts=["market", "social", "news", "fundamentals", "forward"],
         debug=False,
         config: Dict[str, Any] = None,
         callbacks: Optional[List] = None,
@@ -170,9 +175,9 @@ class TradingAgentsGraph:
             ),
             "news": ToolNode(
                 [
-                    # News and insider information
                     get_news,
                     get_global_news,
+                    get_macro_regime,
                     get_insider_transactions,
                 ]
             ),
@@ -183,6 +188,16 @@ class TradingAgentsGraph:
                     get_balance_sheet,
                     get_cashflow,
                     get_income_statement,
+                ]
+            ),
+            "forward": ToolNode(
+                [
+                    get_analyst_estimates,
+                    get_peer_comparables,
+                    get_macro_regime,
+                    get_sector_etf_trends,
+                    get_options_implied_move,
+                    get_news,
                 ]
             ),
         }
@@ -355,6 +370,7 @@ class TradingAgentsGraph:
             "sentiment_report": final_state["sentiment_report"],
             "news_report": final_state["news_report"],
             "fundamentals_report": final_state["fundamentals_report"],
+            "forward_report": final_state["forward_report"],
             "investment_debate_state": {
                 "bull_history": final_state["investment_debate_state"]["bull_history"],
                 "bear_history": final_state["investment_debate_state"]["bear_history"],

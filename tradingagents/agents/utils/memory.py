@@ -15,6 +15,7 @@ class TradingMemoryLog:
     # Precompiled patterns — avoids re-compilation on every load_entries() call
     _DECISION_RE = re.compile(r"DECISION:\n(.*?)(?=\nREFLECTION:|\Z)", re.DOTALL)
     _REFLECTION_RE = re.compile(r"REFLECTION:\n(.*?)$", re.DOTALL)
+    _THEMES_RE = re.compile(r"SECULAR_THEMES:\s*(.*)")
 
     def __init__(self, config: dict = None):
         cfg = config or {}
@@ -44,8 +45,16 @@ class TradingMemoryLog:
                 if line.startswith(f"[{trade_date} | {ticker} |") and line.endswith("| pending]"):
                     return
         rating = parse_rating(final_trade_decision)
+        themes = self._extract_secular_themes_from_decision(final_trade_decision)
         tag = f"[{trade_date} | {ticker} | {rating} | pending]"
-        entry = f"{tag}\n\nDECISION:\n{final_trade_decision}{self._SEPARATOR}"
+        if themes:
+            entry = (
+                f"{tag}\n\n"
+                f"SECULAR_THEMES: {', '.join(themes)}\n\n"
+                f"DECISION:\n{final_trade_decision}{self._SEPARATOR}"
+            )
+        else:
+            entry = f"{tag}\n\nDECISION:\n{final_trade_decision}{self._SEPARATOR}"
         with open(self._log_path, "a", encoding="utf-8") as f:
             f.write(entry)
 
@@ -279,6 +288,15 @@ class TradingMemoryLog:
         reflection_match = self._REFLECTION_RE.search(body)
         entry["decision"] = decision_match.group(1).strip() if decision_match else ""
         entry["reflection"] = reflection_match.group(1).strip() if reflection_match else ""
+        themes_match = self._THEMES_RE.search(body)
+        if themes_match:
+            raw_themes = themes_match.group(1).strip()
+            if raw_themes.lower() == "none" or not raw_themes:
+                entry["secular_themes"] = []
+            else:
+                entry["secular_themes"] = [t.strip() for t in raw_themes.split(",") if t.strip()]
+        else:
+            entry["secular_themes"] = self._extract_secular_themes_from_decision(entry["decision"])
         return entry
 
     def _format_full(self, e: dict) -> str:
@@ -287,14 +305,31 @@ class TradingMemoryLog:
         holding = e["holding"] or "n/a"
         tag = f"[{e['date']} | {e['ticker']} | {e['rating']} | {raw} | {alpha} | {holding}]"
         parts = [tag, f"DECISION:\n{e['decision']}"]
+        if e.get("secular_themes"):
+            parts.insert(1, f"SECULAR_THEMES: {', '.join(e['secular_themes'])}")
         if e["reflection"]:
             parts.append(f"REFLECTION:\n{e['reflection']}")
         return "\n\n".join(parts)
 
     def _format_reflection_only(self, e: dict) -> str:
-        tag = f"[{e['date']} | {e['ticker']} | {e['rating']} | {e['raw'] or 'n/a'}]"
+        theme_suffix = ""
+        if e.get("secular_themes"):
+            theme_suffix = f" | themes: {', '.join(e['secular_themes'])}"
+        tag = f"[{e['date']} | {e['ticker']} | {e['rating']} | {e['raw'] or 'n/a'}]{theme_suffix}"
         if e["reflection"]:
             return f"{tag}\n{e['reflection']}"
         text = e["decision"][:300]
         suffix = "..." if len(e["decision"]) > 300 else ""
         return f"{tag}\n{text}{suffix}"
+
+    @staticmethod
+    def _extract_secular_themes_from_decision(decision: str) -> List[str]:
+        """Extract secular themes from rendered decision markdown when present."""
+        if not decision:
+            return []
+        for line in decision.splitlines():
+            cleaned = line.strip()
+            if cleaned.lower().startswith("**secular themes**:"):
+                theme_part = cleaned.split(":", 1)[1].strip()
+                return [t.strip() for t in theme_part.split(",") if t.strip()]
+        return []

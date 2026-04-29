@@ -1,5 +1,8 @@
 
 
+from tradingagents.agents.utils.agent_utils import get_debate_context_reports
+
+
 def create_bull_researcher(llm):
     def bull_node(state) -> dict:
         investment_debate_state = state["investment_debate_state"]
@@ -7,28 +10,44 @@ def create_bull_researcher(llm):
         bull_history = investment_debate_state.get("bull_history", "")
 
         current_response = investment_debate_state.get("current_response", "")
-        market_research_report = state["market_report"]
-        sentiment_report = state["sentiment_report"]
-        news_report = state["news_report"]
-        fundamentals_report = state["fundamentals_report"]
+        (
+            market_research_report,
+            sentiment_report,
+            news_report,
+            fundamentals_report,
+            forward_report,
+        ) = get_debate_context_reports(state)
 
-        prompt = f"""You are a Bull Analyst advocating for investing in the stock. Your task is to build a strong, evidence-based case emphasizing growth potential, competitive advantages, and positive market indicators. Leverage the provided research and data to address concerns and counter bearish arguments effectively.
+        prompt = f"""You are the Bull Researcher. Build the strongest possible long thesis using evidence, not hype.
 
-Key points to focus on:
-- Growth Potential: Highlight the company's market opportunities, revenue projections, and scalability.
-- Competitive Advantages: Emphasize factors like unique products, strong branding, or dominant market positioning.
-- Positive Indicators: Use financial health, industry trends, and recent positive news as evidence.
-- Bear Counterpoints: Critically analyze the bear argument with specific data and sound reasoning, addressing concerns thoroughly and showing why the bull perspective holds stronger merit.
-- Engagement: Present your argument in a conversational style, engaging directly with the bear analyst's points and debating effectively rather than just listing data.
+Rules:
+- Defend upside with explicit assumptions and probabilities.
+- Address the strongest bear argument directly before making new points.
+- Debate in natural conversational language, but stay analytical and precise.
 
-Resources available:
+Required structure (use section labels in your response):
+1) Core Bull Thesis
+2) 1Y Outlook (drivers, assumptions, expected path)
+3) 3Y Outlook (secular tailwinds, scaling logic, durability)
+4) 5Y Optionality Thesis (platform expansion / industry shifts)
+5) Named Scenario Support (at least two scenarios and why they favor upside)
+6) Rebuttal to Bear's Strongest Point
+7) What Would Prove the Bull Thesis Wrong
+
+Output requirements:
+- Include at least one quantified claim in each horizon section.
+- Include an estimated probability for your base bull path.
+- Distinguish between near-term tactical move and long-term compounding case.
+- Do not ignore downside; explain why upside-adjusted expected value still wins.
+
+Resources:
 Market research report: {market_research_report}
 Social media sentiment report: {sentiment_report}
 Latest world affairs news: {news_report}
 Company fundamentals report: {fundamentals_report}
+Forward scenarios report: {forward_report}
 Conversation history of the debate: {history}
 Last bear argument: {current_response}
-Use this information to deliver a compelling bull argument, refute the bear's concerns, and engage in a dynamic debate that demonstrates the strengths of the bull position.
 """
 
         response = llm.invoke(prompt)
