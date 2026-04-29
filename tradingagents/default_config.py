@@ -59,4 +59,7 @@ DEFAULT_CONFIG = {
     "max_chars_per_report_in_debate": None,
     # Excerpt length per report in Research Manager / Trader evidence digest
     "analyst_evidence_digest_max_chars_per_report": 1200,
+    # LangSmith: None = only env vars (LANGCHAIN_TRACING_V2); True/False forces on/off
+    "langsmith_tracing": None,
+    "langsmith_project": "TradingAgents",
 }
