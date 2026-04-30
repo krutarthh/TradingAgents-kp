@@ -3,6 +3,9 @@
 Tracing captures LLM generations, tool calls, and LangGraph steps in the LangSmith UI
 when ``LANGCHAIN_TRACING_V2=true`` and ``LANGCHAIN_API_KEY`` are set.
 
+Offline evaluation: see ``tradingagents.evaluation.langsmith_rubric`` for a trace-scoring
+rubric aligned with the analysis framework.
+
 See https://docs.smith.langchain.com/
 """
 

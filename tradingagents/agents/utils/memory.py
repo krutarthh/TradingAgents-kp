@@ -16,6 +16,7 @@ class TradingMemoryLog:
     _DECISION_RE = re.compile(r"DECISION:\n(.*?)(?=\nREFLECTION:|\Z)", re.DOTALL)
     _REFLECTION_RE = re.compile(r"REFLECTION:\n(.*?)$", re.DOTALL)
     _THEMES_RE = re.compile(r"SECULAR_THEMES:\s*(.*)")
+    _THESIS_BRIEF_RE = re.compile(r"THESIS_BRIEF:\n(.*?)(?=\nDECISION:|\Z)", re.DOTALL)
 
     def __init__(self, config: dict = None):
         cfg = config or {}
@@ -34,6 +35,7 @@ class TradingMemoryLog:
         ticker: str,
         trade_date: str,
         final_trade_decision: str,
+        integrated_thesis_report: str = "",
     ) -> None:
         """Append pending entry at end of propagate(). No LLM call."""
         if not self._log_path:
@@ -47,14 +49,24 @@ class TradingMemoryLog:
         rating = parse_rating(final_trade_decision)
         themes = self._extract_secular_themes_from_decision(final_trade_decision)
         tag = f"[{trade_date} | {ticker} | {rating} | pending]"
+        thesis_block = ""
+        if integrated_thesis_report and integrated_thesis_report.strip():
+            cap = 4000
+            thesis_block = (
+                "THESIS_BRIEF:\n"
+                f"{integrated_thesis_report.strip()[:cap]}\n\n"
+            )
         if themes:
             entry = (
                 f"{tag}\n\n"
+                f"{thesis_block}"
                 f"SECULAR_THEMES: {', '.join(themes)}\n\n"
                 f"DECISION:\n{final_trade_decision}{self._SEPARATOR}"
             )
         else:
-            entry = f"{tag}\n\nDECISION:\n{final_trade_decision}{self._SEPARATOR}"
+            entry = (
+                f"{tag}\n\n{thesis_block}DECISION:\n{final_trade_decision}{self._SEPARATOR}"
+            )
         with open(self._log_path, "a", encoding="utf-8") as f:
             f.write(entry)
 
@@ -288,6 +300,8 @@ class TradingMemoryLog:
         reflection_match = self._REFLECTION_RE.search(body)
         entry["decision"] = decision_match.group(1).strip() if decision_match else ""
         entry["reflection"] = reflection_match.group(1).strip() if reflection_match else ""
+        thesis_match = self._THESIS_BRIEF_RE.search(body)
+        entry["thesis_brief"] = thesis_match.group(1).strip() if thesis_match else ""
         themes_match = self._THEMES_RE.search(body)
         if themes_match:
             raw_themes = themes_match.group(1).strip()
@@ -305,8 +319,11 @@ class TradingMemoryLog:
         holding = e["holding"] or "n/a"
         tag = f"[{e['date']} | {e['ticker']} | {e['rating']} | {raw} | {alpha} | {holding}]"
         parts = [tag, f"DECISION:\n{e['decision']}"]
+        if e.get("thesis_brief"):
+            parts.insert(1, f"THESIS_BRIEF:\n{e['thesis_brief']}")
         if e.get("secular_themes"):
-            parts.insert(1, f"SECULAR_THEMES: {', '.join(e['secular_themes'])}")
+            idx = 2 if e.get("thesis_brief") else 1
+            parts.insert(idx, f"SECULAR_THEMES: {', '.join(e['secular_themes'])}")
         if e["reflection"]:
             parts.append(f"REFLECTION:\n{e['reflection']}")
         return "\n\n".join(parts)

@@ -676,10 +676,26 @@ def save_report_to_disk(final_state, ticker: str, save_path: Path):
         sections.append(f"## I. Analyst Team Reports\n\n{content}")
 
     # 2. Research
-    if final_state.get("investment_debate_state"):
+    debate = final_state.get("investment_debate_state") or {}
+    if (
+        debate
+        or final_state.get("integrated_thesis_report")
+        or final_state.get("verification_notes")
+    ):
         research_dir = save_path / "2_research"
-        debate = final_state["investment_debate_state"]
         research_parts = []
+        if final_state.get("integrated_thesis_report"):
+            research_dir.mkdir(exist_ok=True)
+            (research_dir / "integrated_thesis.md").write_text(
+                final_state["integrated_thesis_report"], encoding="utf-8"
+            )
+            research_parts.append(("Thesis integrator", final_state["integrated_thesis_report"]))
+        if final_state.get("verification_notes"):
+            research_dir.mkdir(exist_ok=True)
+            (research_dir / "verification.md").write_text(
+                final_state["verification_notes"], encoding="utf-8"
+            )
+            research_parts.append(("Verifier-lite", final_state["verification_notes"]))
         if debate.get("bull_history"):
             research_dir.mkdir(exist_ok=True)
             (research_dir / "bull.md").write_text(debate["bull_history"], encoding="utf-8")
@@ -760,9 +776,17 @@ def display_complete_report(final_state):
             console.print(Panel(Markdown(content), title=title, border_style="blue", padding=(1, 2)))
 
     # II. Research Team Reports
-    if final_state.get("investment_debate_state"):
-        debate = final_state["investment_debate_state"]
+    debate = final_state.get("investment_debate_state") or {}
+    if (
+        debate
+        or final_state.get("integrated_thesis_report")
+        or final_state.get("verification_notes")
+    ):
         research = []
+        if final_state.get("integrated_thesis_report"):
+            research.append(("Thesis integrator", final_state["integrated_thesis_report"]))
+        if final_state.get("verification_notes"):
+            research.append(("Verifier-lite", final_state["verification_notes"]))
         if debate.get("bull_history"):
             research.append(("Bull Researcher", debate["bull_history"]))
         if debate.get("bear_history"):

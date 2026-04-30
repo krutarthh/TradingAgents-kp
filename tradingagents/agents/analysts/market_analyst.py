@@ -5,6 +5,7 @@ from tradingagents.agents.utils.agent_utils import (
     get_language_instruction,
     get_stock_data,
 )
+from tradingagents.agents.utils.analysis_framework import get_analysis_contract_suffix
 from tradingagents.dataflows.config import get_config
 
 
@@ -160,6 +161,7 @@ IMPORTANT:
 - Your edge comes from SELECTIVITY and INTERPRETATION, not quantity.
 """
             + """ Make sure to append a Markdown table at the end of the report to organize key points in the report, organized and easy to read."""
+            + get_analysis_contract_suffix()
             + get_language_instruction()
         )
 

@@ -6,6 +6,7 @@ from tradingagents.agents.utils.agent_utils import (
     get_macro_regime,
     get_news,
 )
+from tradingagents.agents.utils.analysis_framework import get_analysis_contract_suffix
 
 
 def create_news_analyst(llm):
@@ -48,6 +49,7 @@ Rubric:
 
 Finish with a Markdown table named "News-to-Scenario Evidence Table" with columns for news item, scenario mapping, probability impact, and trading implication."""
             + " Make sure to use both company-level and global macro evidence."
+            + get_analysis_contract_suffix()
             + get_language_instruction()
         )
 

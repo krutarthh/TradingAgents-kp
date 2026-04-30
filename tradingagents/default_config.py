@@ -59,6 +59,11 @@ DEFAULT_CONFIG = {
     "max_chars_per_report_in_debate": None,
     # Excerpt length per report in Research Manager / Trader evidence digest
     "analyst_evidence_digest_max_chars_per_report": 1200,
+    # Methodology extras (thesis integrator + verifier-lite before Research Manager)
+    "enable_thesis_integrator": True,
+    "enable_verification_gate": True,
+    # Preferred analyst order: list "forward" last so consensus/macro are freshest before integration
+    "recommended_analyst_order": ["market", "social", "news", "fundamentals", "forward"],
     # LangSmith: None = only env vars (LANGCHAIN_TRACING_V2); True/False forces on/off
     "langsmith_tracing": None,
     "langsmith_project": "TradingAgents",

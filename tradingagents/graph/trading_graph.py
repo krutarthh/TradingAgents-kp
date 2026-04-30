@@ -43,6 +43,7 @@ from tradingagents.agents.utils.agent_utils import (
     get_sector_etf_trends,
     get_options_implied_move,
 )
+from tradingagents.agents.utils.calculator_tool import evaluate_math_expression
 
 from .checkpointer import checkpoint_step, clear_checkpoint, get_checkpointer, thread_id
 from .conditional_logic import ConditionalLogic
@@ -185,11 +186,12 @@ class TradingAgentsGraph:
             ),
             "fundamentals": ToolNode(
                 [
-                    # Fundamental analysis tools
                     get_fundamentals,
                     get_balance_sheet,
                     get_cashflow,
                     get_income_statement,
+                    get_insider_transactions,
+                    evaluate_math_expression,
                 ]
             ),
             "forward": ToolNode(
@@ -200,6 +202,7 @@ class TradingAgentsGraph:
                     get_sector_etf_trends,
                     get_options_implied_move,
                     get_news,
+                    evaluate_math_expression,
                 ]
             ),
         }
@@ -353,6 +356,7 @@ class TradingAgentsGraph:
             ticker=company_name,
             trade_date=trade_date,
             final_trade_decision=final_state["final_trade_decision"],
+            integrated_thesis_report=final_state.get("integrated_thesis_report") or "",
         )
 
         # Clear checkpoint on successful completion to avoid stale state.
@@ -373,6 +377,8 @@ class TradingAgentsGraph:
             "news_report": final_state["news_report"],
             "fundamentals_report": final_state["fundamentals_report"],
             "forward_report": final_state["forward_report"],
+            "integrated_thesis_report": final_state.get("integrated_thesis_report", ""),
+            "verification_notes": final_state.get("verification_notes", ""),
             "investment_debate_state": {
                 "bull_history": final_state["investment_debate_state"]["bull_history"],
                 "bear_history": final_state["investment_debate_state"]["bear_history"],

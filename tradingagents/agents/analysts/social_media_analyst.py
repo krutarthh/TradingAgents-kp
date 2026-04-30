@@ -1,5 +1,6 @@
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from tradingagents.agents.utils.agent_utils import build_instrument_context, get_language_instruction, get_news
+from tradingagents.agents.utils.analysis_framework import get_analysis_contract_suffix
 from tradingagents.dataflows.config import get_config
 
 
@@ -38,6 +39,7 @@ Rubric:
 - Provide an explicit confidence score for your sentiment inference.
 
 Finish with a Markdown table named "Narrative and Sentiment Evidence Table" with columns for date/theme, sentiment direction, confidence, and implication."""
+            + get_analysis_contract_suffix()
             + get_language_instruction()
         )
 

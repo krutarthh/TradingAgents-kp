@@ -57,6 +57,8 @@ class AgentState(MessagesState):
     ]
     fundamentals_report: Annotated[str, "Report from the Fundamentals Researcher"]
     forward_report: Annotated[str, "Forward-looking scenario and consensus report"]
+    integrated_thesis_report: Annotated[str, "Synthesized cross-report thesis before debate"]
+    verification_notes: Annotated[str, "Structural checks from verifier-lite before Research Manager"]
 
     # researcher team discussion step
     investment_debate_state: Annotated[

@@ -32,7 +32,10 @@ class GraphSetup:
         """Set up and compile the agent workflow graph.
 
         Args:
-            selected_analysts (list): List of analyst types to include. Options are:
+            selected_analysts (list): List of analyst types to include. Prefer the same
+                ordering as ``default_config["recommended_analyst_order"]`` (typically
+                ``"forward"`` last so consensus and macro are fresh before thesis integration).
+                Options are:
                 - "market": Market analyst
                 - "social": Social media analyst
                 - "news": News analyst
@@ -83,6 +86,8 @@ class GraphSetup:
             tool_nodes["forward"] = self.tool_nodes["forward"]
 
         # Create researcher and manager nodes
+        thesis_integrator_node = create_thesis_integrator(self.deep_thinking_llm)
+        verification_gate_node = create_verification_gate()
         bull_researcher_node = create_bull_researcher(self.quick_thinking_llm)
         bear_researcher_node = create_bear_researcher(self.quick_thinking_llm)
         research_manager_node = create_research_manager(self.deep_thinking_llm)
@@ -106,6 +111,8 @@ class GraphSetup:
             workflow.add_node(f"tools_{analyst_type}", tool_nodes[analyst_type])
 
         # Add other nodes
+        workflow.add_node("Thesis Integrator", thesis_integrator_node)
+        workflow.add_node("Verification Gate", verification_gate_node)
         workflow.add_node("Bull Researcher", bull_researcher_node)
         workflow.add_node("Bear Researcher", bear_researcher_node)
         workflow.add_node("Research Manager", research_manager_node)
@@ -139,7 +146,9 @@ class GraphSetup:
                 next_analyst = f"{selected_analysts[i+1].capitalize()} Analyst"
                 workflow.add_edge(current_clear, next_analyst)
             else:
-                workflow.add_edge(current_clear, "Bull Researcher")
+                workflow.add_edge(current_clear, "Thesis Integrator")
+
+        workflow.add_edge("Thesis Integrator", "Bull Researcher")
 
         # Add remaining edges
         workflow.add_conditional_edges(
@@ -147,7 +156,7 @@ class GraphSetup:
             self.conditional_logic.should_continue_debate,
             {
                 "Bear Researcher": "Bear Researcher",
-                "Research Manager": "Research Manager",
+                "Verification Gate": "Verification Gate",
             },
         )
         workflow.add_conditional_edges(
@@ -155,9 +164,10 @@ class GraphSetup:
             self.conditional_logic.should_continue_debate,
             {
                 "Bull Researcher": "Bull Researcher",
-                "Research Manager": "Research Manager",
+                "Verification Gate": "Verification Gate",
             },
         )
+        workflow.add_edge("Verification Gate", "Research Manager")
         workflow.add_edge("Research Manager", "Trader")
         workflow.add_edge("Trader", "Aggressive Analyst")
         workflow.add_conditional_edges(

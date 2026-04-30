@@ -17,6 +17,7 @@ def create_bull_researcher(llm):
             fundamentals_report,
             forward_report,
         ) = get_debate_context_reports(state)
+        integrated_thesis = (state.get("integrated_thesis_report") or "").strip()
 
         prompt = f"""You are the Bull Researcher. Build the strongest possible long thesis using evidence, not hype.
 
@@ -41,6 +42,8 @@ Output requirements:
 - Do not ignore downside; explain why upside-adjusted expected value still wins.
 
 Resources:
+Integrated thesis (cross-analyst synthesis — start here; resolve conflicts explicitly in your argument): {integrated_thesis or "(none — rely on raw reports below)"}
+
 Market research report: {market_research_report}
 Social media sentiment report: {sentiment_report}
 Latest world affairs news: {news_report}

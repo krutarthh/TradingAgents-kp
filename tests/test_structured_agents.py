@@ -219,6 +219,8 @@ def _make_rm_state():
     return {
         "company_of_interest": "NVDA",
         "forward_report": "Forward report with bull/base/bear scenarios.",
+        "integrated_thesis_report": "INTEGRATED_THESIS_SENTINEL",
+        "verification_notes": "VERIFICATION_SENTINEL",
         "investment_debate_state": {
             "history": "Bull and bear arguments here.",
             "bull_history": "Bull says...",
@@ -274,6 +276,15 @@ class TestResearchManagerAgent:
             assert f"**{tier}**" in prompt, f"missing {tier} in prompt"
         assert "Forward Scenarios Report" in prompt
 
+    def test_prompt_includes_integrated_thesis_and_verification_notes(self):
+        captured = {}
+        llm = _structured_rm_llm(captured)
+        rm = create_research_manager(llm)
+        rm(_make_rm_state())
+        prompt = captured["prompt"]
+        assert "INTEGRATED_THESIS_SENTINEL" in prompt
+        assert "VERIFICATION_SENTINEL" in prompt
+
     def test_falls_back_to_freetext_when_structured_unavailable(self):
         plain_response = "**Recommendation**: Sell\n\n**Rationale**: ...\n\n**Strategic Actions**: ..."
         llm = MagicMock()
@@ -313,6 +324,7 @@ class TestForwardReportPlumbingInPrompts:
             "news_report": "news",
             "fundamentals_report": "fundamentals",
             "forward_report": "FORWARD_REPORT_SENTINEL",
+            "integrated_thesis_report": "INTEGRATED_THESIS_SENTINEL",
             "trader_investment_plan": "Trader plan",
         }
 
@@ -321,9 +333,11 @@ class TestForwardReportPlumbingInPrompts:
 
         create_bull_researcher(llm)(base_state)
         assert "FORWARD_REPORT_SENTINEL" in llm.invoke.call_args_list[-1].args[0]
+        assert "INTEGRATED_THESIS_SENTINEL" in llm.invoke.call_args_list[-1].args[0]
 
         create_bear_researcher(llm)(base_state)
         assert "FORWARD_REPORT_SENTINEL" in llm.invoke.call_args_list[-1].args[0]
+        assert "INTEGRATED_THESIS_SENTINEL" in llm.invoke.call_args_list[-1].args[0]
 
         create_aggressive_debator(llm)(base_state)
         assert "FORWARD_REPORT_SENTINEL" in llm.invoke.call_args_list[-1].args[0]

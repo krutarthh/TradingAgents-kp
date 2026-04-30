@@ -33,6 +33,7 @@ from .alpha_vantage import (
     get_global_news as get_alpha_vantage_global_news,
 )
 from .alpha_vantage_common import AlphaVantageRateLimitError
+from .tool_response_metadata import prefix_string_body
 
 # Tools organized by category
 TOOLS_CATEGORIES = {
@@ -200,7 +201,10 @@ def route_to_vendor(method: str, *args, **kwargs):
         impl_func = vendor_impl[0] if isinstance(vendor_impl, list) else vendor_impl
 
         try:
-            return impl_func(*args, **kwargs)
+            result = impl_func(*args, **kwargs)
+            if isinstance(result, str):
+                return prefix_string_body(method, vendor, result, args, kwargs)
+            return result
         except AlphaVantageRateLimitError:
             continue
         except DataVendorSkipped:

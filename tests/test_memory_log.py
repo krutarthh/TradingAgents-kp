@@ -158,6 +158,18 @@ class TestTradingMemoryLogCore:
         text = (tmp_path / "trading_memory.md").read_text(encoding="utf-8")
         assert "[2026-01-10 | NVDA | Buy | pending]" in text
 
+    def test_store_decision_with_thesis_brief_surfaces_in_past_context(self, tmp_path):
+        log = make_log(tmp_path)
+        log.store_decision(
+            "NVDA",
+            "2026-01-10",
+            DECISION_BUY,
+            integrated_thesis_report="## Unified thesis\nBull: test.",
+        )
+        log.update_with_outcome("NVDA", "2026-01-10", 0.01, 0.0, 1, "ok")
+        ctx = log.get_past_context("NVDA", n_same=3, n_cross=0)
+        assert "Unified thesis" in ctx
+
     # Rating parsing
 
     def test_rating_parsed_buy(self, tmp_path):

@@ -17,6 +17,7 @@ def create_bear_researcher(llm):
             fundamentals_report,
             forward_report,
         ) = get_debate_context_reports(state)
+        integrated_thesis = (state.get("integrated_thesis_report") or "").strip()
 
         prompt = f"""You are the Bear Researcher. Build the strongest possible downside thesis grounded in evidence.
 
@@ -41,6 +42,8 @@ Output requirements:
 - Explicitly identify where valuation expectations are vulnerable to compression.
 
 Resources available:
+Integrated thesis (cross-analyst synthesis — start here; stress-test conflicts and fragility): {integrated_thesis or "(none — rely on raw reports below)"}
+
 Market research report: {market_research_report}
 Social media sentiment report: {sentiment_report}
 Latest world affairs news: {news_report}

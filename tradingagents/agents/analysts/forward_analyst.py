@@ -10,6 +10,8 @@ from tradingagents.agents.utils.agent_utils import (
     get_peer_comparables,
     get_sector_etf_trends,
 )
+from tradingagents.agents.utils.analysis_framework import get_analysis_contract_suffix
+from tradingagents.agents.utils.calculator_tool import evaluate_math_expression
 from tradingagents.agents.utils.scenarios import get_all_scenarios_text
 
 
@@ -26,6 +28,7 @@ def create_forward_analyst(llm):
             get_sector_etf_trends,
             get_options_implied_move,
             get_news,
+            evaluate_math_expression,
         ]
 
         system_message = (
@@ -37,6 +40,7 @@ Required process:
 3) Call `get_sector_etf_trends` using the most relevant sector/ETF implied by your findings.
 4) Optionally call `get_options_implied_move` for event-volatility context.
 5) Use `get_news` for corroboration of forward catalysts and risks.
+6) Use `evaluate_math_expression` for implied growth, margin, or multiple math—do not rely on mental arithmetic alone.
 
 Scenario playbook (must use):
 """
@@ -48,6 +52,7 @@ Required report sections (use these exact headings):
 ## Sector and Secular Theme Classification
 ## Consensus Expectations and Estimate Drift
 ## Peer and Sector Relative Positioning
+## Valuation Triangulation (consensus / multiples vs second anchor)
 ## Macro Regime Alignment
 ## Event Risk and Implied Volatility Context
 ## Bull, Base, Bear Scenario Framework
@@ -58,12 +63,14 @@ Required report sections (use these exact headings):
 
 Rubric:
 - Name at least two secular themes and explain mechanism, not slogans.
-- Provide explicit bull/base/bear probabilities with assumptions.
+- **Valuation**: require two anchors—e.g. peer-relative multiple band from `get_peer_comparables` plus a second check (consensus growth vs history, implied upside from targets, or simple sanity using `evaluate_math_expression`). Do not conclude "cheap" on one multiple alone.
+- Provide explicit bull/base/bear probabilities that sum to about 1.0 with assumptions.
 - Include both upside pathways and failure pathways.
 - Separate what is consensus from what is non-consensus.
 - Be specific about what evidence would cause probability updates.
 
 Finish with a Markdown table named "Forward Scenario Evidence Table" with scenario, assumptions, probability, expected impact, and update trigger."""
+            + get_analysis_contract_suffix()
             + get_language_instruction()
         )
 
