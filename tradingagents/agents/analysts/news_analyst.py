@@ -1,6 +1,7 @@
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from tradingagents.agents.utils.agent_utils import (
     build_instrument_context,
+    get_fear_greed_index,
     get_global_news,
     get_language_instruction,
     get_macro_regime,
@@ -18,6 +19,7 @@ def create_news_analyst(llm):
             get_news,
             get_global_news,
             get_macro_regime,
+            get_fear_greed_index,
         ]
 
         system_message = (
@@ -25,12 +27,14 @@ def create_news_analyst(llm):
 
 Use tools:
 - `get_macro_regime(curr_date)` early — use the **current date** `{current_date}` as `curr_date` for data-backed rates, vol, FX, and credit context.
+- `get_fear_greed_index(curr_date)` early — use CNN sentiment to contextualize risk appetite/positioning.
 - `get_news(ticker, start_date, end_date)` for company-specific and sector-relevant developments.
 - `get_global_news(curr_date, look_back_days, limit)` for macro and geopolitical context.
 
 Required report sections (use these exact headings):
 ## Executive Summary
 ## Macro Regime Snapshot
+## Sentiment Regime (Fear & Greed)
 ## Geopolitical and Policy Risks
 ## Sector Tailwinds and Headwinds
 ## Competitive and Industry Structure Changes
@@ -41,6 +45,7 @@ Required report sections (use these exact headings):
 
 Rubric:
 - In ## Macro Regime Snapshot, synthesize `get_macro_regime` output with news flow; do not invent rate/VIX levels not supported by tools.
+- In ## Sentiment Regime (Fear & Greed), cite current score/rating and explain whether it confirms or diverges from macro/news signals.
 - Analyze major themes including AI investment cycles, rates/liquidity, inflation, war/escalation risk, regulation, and supply-chain shifts when relevant.
 - Distinguish signal from noise and indicate confidence level.
 - Link each important headline to one of bull/base/bear scenarios.

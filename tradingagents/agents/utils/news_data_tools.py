@@ -51,3 +51,14 @@ def get_insider_transactions(
         str: A report of insider transaction data
     """
     return route_to_vendor("get_insider_transactions", ticker)
+
+
+@tool
+def get_fear_greed_index(
+    curr_date: Annotated[str, "Current date in yyyy-mm-dd format"],
+) -> str:
+    """
+    Retrieve CNN Fear & Greed sentiment index snapshot.
+    Uses configured news_data vendor route.
+    """
+    return route_to_vendor("get_fear_greed_index", curr_date)

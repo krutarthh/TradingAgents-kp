@@ -1,6 +1,7 @@
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from tradingagents.agents.utils.agent_utils import (
     build_instrument_context,
+    get_fear_greed_index,
     get_indicators,
     get_language_instruction,
     get_stock_data,
@@ -18,6 +19,7 @@ def create_market_analyst(llm):
         tools = [
             get_stock_data,
             get_indicators,
+            get_fear_greed_index,
         ]
 
         system_message = (
@@ -104,7 +106,8 @@ PROCESS:
 1) Call `get_stock_data` to retrieve OHLCV data.
 2) Based on the price structure, SELECT your indicators following the rules above.
 3) Call `get_indicators` using ONLY the selected indicators.
-4) Build your report using the retrieved data.
+4) Call `get_fear_greed_index` and explicitly incorporate sentiment regime in your tactical risk framing.
+5) Build your report using the retrieved data.
 
 ----------------------------------------
 
@@ -115,6 +118,7 @@ REQUIRED REPORT STRUCTURE (USE EXACT HEADINGS):
 ## Trend Structure (3M and 6M)
 ## Momentum and Breadth Signals
 ## Volatility Regime and Risk
+## Sentiment Regime (Fear & Greed)
 ## Key Levels, Triggers, and Invalidation
 ## Tactical Plan (0-6 Weeks)
 ## Strategic Structure View (6-12 Months)

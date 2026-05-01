@@ -3,15 +3,23 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from tradingagents.agents.utils.agent_utils import (
     build_instrument_context,
     get_analyst_estimates,
+    get_earnings_transcript_highlights,
     get_language_instruction,
     get_macro_regime,
     get_news,
     get_options_implied_move,
     get_peer_comparables,
+    probability_weighted_price,
+    get_sec_filing_highlights,
+    get_sec_filing_sections,
     get_sector_etf_trends,
 )
 from tradingagents.agents.utils.analysis_framework import get_analysis_contract_suffix
-from tradingagents.agents.utils.calculator_tool import evaluate_math_expression
+from tradingagents.agents.utils.calculator_tool import (
+    evaluate_math_expression,
+    implied_cagr,
+    valuation_sensitivity_table,
+)
 from tradingagents.agents.utils.scenarios import get_all_scenarios_text
 
 
@@ -28,7 +36,13 @@ def create_forward_analyst(llm):
             get_sector_etf_trends,
             get_options_implied_move,
             get_news,
+            get_sec_filing_highlights,
+            get_sec_filing_sections,
+            get_earnings_transcript_highlights,
             evaluate_math_expression,
+            implied_cagr,
+            probability_weighted_price,
+            valuation_sensitivity_table,
         ]
 
         system_message = (
@@ -39,8 +53,14 @@ Required process:
 2) Call `get_peer_comparables` and `get_macro_regime`.
 3) Call `get_sector_etf_trends` using the most relevant sector/ETF implied by your findings.
 4) Optionally call `get_options_implied_move` for event-volatility context.
-5) Use `get_news` for corroboration of forward catalysts and risks.
-6) Use `evaluate_math_expression` for implied growth, margin, or multiple math—do not rely on mental arithmetic alone.
+5) Use `get_sec_filing_highlights` (10-K) to ground medium-term strategic assumptions in primary filing cadence.
+6) Call `get_sec_filing_sections` to fetch filing text from the SEC URL and extract forward-relevant evidence.
+7) Read in this order: MD&A -> Financial statements -> Footnotes -> Risk Factors -> Business context.
+8) Use `get_earnings_transcript_highlights` when available; if unavailable, state that limitation explicitly.
+9) Use `get_news` for corroboration of forward catalysts and risks.
+10) Use `evaluate_math_expression` and `implied_cagr` for implied growth, margin, or multiple math—do not rely on mental arithmetic alone.
+11) Use `probability_weighted_price` for explicit expected-value price synthesis from bull/base/bear targets.
+12) If `enable_valuation_sensitivity_tables` is on, include one `valuation_sensitivity_table` stress block.
 
 Scenario playbook (must use):
 """
@@ -64,6 +84,7 @@ Required report sections (use these exact headings):
 Rubric:
 - Name at least two secular themes and explain mechanism, not slogans.
 - **Valuation**: require two anchors—e.g. peer-relative multiple band from `get_peer_comparables` plus a second check (consensus growth vs history, implied upside from targets, or simple sanity using `evaluate_math_expression`). Do not conclude "cheap" on one multiple alone.
+- **SEC filing evidence is mandatory**: include at least one forward-looking claim grounded in the fetched filing URL text (not just the filing metadata row).
 - Provide explicit bull/base/bear probabilities that sum to about 1.0 with assumptions.
 - Include both upside pathways and failure pathways.
 - Separate what is consensus from what is non-consensus.

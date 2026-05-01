@@ -33,6 +33,21 @@ def suggested_langsmith_dataset_metadata(ticker: str, trade_date: str) -> Dict[s
     return {
         "ticker": ticker,
         "trade_date": trade_date,
+        "horizon_days": 60,
+        "benchmark_ticker": "SPY",
         "rubric_version": "methodology_first_v1",
         "pillars_ref": "tradingagents.agents.utils.analysis_framework",
     }
+
+
+DEFAULT_RUBRIC_WEIGHTS: Dict[str, float] = {
+    "thesis_clarity": 1.0,
+    "triangulation": 1.2,
+    "business_industry": 1.0,
+    "earnings_quality": 1.2,
+    "valuation_triangulation": 1.3,
+    "risks_catalysts": 1.0,
+    "numeric_discipline": 1.3,
+    "verifier_compliance": 1.1,
+    "tool_provenance": 0.9,
+}

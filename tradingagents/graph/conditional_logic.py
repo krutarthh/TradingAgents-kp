@@ -73,3 +73,10 @@ class ConditionalLogic:
         if state["risk_debate_state"]["latest_speaker"].startswith("Conservative"):
             return "Neutral Analyst"
         return "Aggressive Analyst"
+
+    def should_continue_after_verification(self, state: AgentState) -> str:
+        """Retry integration/debate on hard fail, else continue to Research Manager."""
+        status = (state.get("verification_status") or "pass").lower()
+        if status == "fail":
+            return "Thesis Integrator"
+        return "Research Manager"

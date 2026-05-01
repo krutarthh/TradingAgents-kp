@@ -26,9 +26,14 @@ def infer_symbol_and_as_of(method: str, args: tuple, kwargs: Mapping[str, Any]) 
             "get_analyst_estimates",
             "get_peer_comparables",
             "get_options_implied_move",
+            "get_sec_filing_highlights",
+            "get_sec_filing_sections",
+            "get_earnings_transcript_highlights",
         ):
             if isinstance(args[0], str):
                 ticker = args[0]
+            if len(args) >= 2 and isinstance(args[1], str):
+                as_of = as_of or args[1]
         elif method == "get_stock_data" and len(args) >= 1 and isinstance(args[0], str):
             ticker = args[0]
             if len(args) >= 3 and isinstance(args[2], str):
@@ -37,6 +42,8 @@ def infer_symbol_and_as_of(method: str, args: tuple, kwargs: Mapping[str, Any]) 
             ticker = args[0]
 
     if method == "get_macro_regime" and not as_of and args and isinstance(args[0], str):
+        as_of = args[0]
+    if method == "get_fear_greed_index" and not as_of and args and isinstance(args[0], str):
         as_of = args[0]
 
     return ticker, as_of

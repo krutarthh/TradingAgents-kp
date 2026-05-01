@@ -41,7 +41,9 @@ DEFAULT_CONFIG = {
     # Debate and discussion settings
     "max_debate_rounds": 1,
     "max_risk_discuss_rounds": 1,
-    "max_recur_limit": 100,
+    # LangGraph recursion_limit (one increment per node execution). Tool-heavy
+    # analysts (SEC sections, fundamentals + calculators) can exceed 100 quickly.
+    "max_recur_limit": 300,
     # Data vendor configuration
     # Category-level configuration (default for all tools in category)
     "data_vendors": {
@@ -54,6 +56,10 @@ DEFAULT_CONFIG = {
     # Tool-level configuration (takes precedence over category-level)
     "tool_vendors": {
         # Example: "get_stock_data": "alpha_vantage",  # Override category default
+        "get_sec_filing_highlights": "api_ninjas",
+        "get_sec_filing_sections": "api_ninjas",
+        "get_earnings_transcript_highlights": "api_ninjas",
+        "get_fear_greed_index": "yfinance",
     },
     # LLM context: cap each analyst report inlined in bull/bear/risk prompts (None = no cap)
     "max_chars_per_report_in_debate": None,
@@ -62,6 +68,12 @@ DEFAULT_CONFIG = {
     # Methodology extras (thesis integrator + verifier-lite before Research Manager)
     "enable_thesis_integrator": True,
     "enable_verification_gate": True,
+    "verification_max_retries": 1,
+    "enable_verifier_plus_fail_block": True,
+    "enable_valuation_sensitivity_tables": True,
+    "enable_filing_transcript_tools": True,
+    "eval_holding_days": 60,
+    "eval_benchmark_ticker": "SPY",
     # Preferred analyst order: list "forward" last so consensus/macro are freshest before integration
     "recommended_analyst_order": ["market", "social", "news", "fundamentals", "forward"],
     # LangSmith: None = only env vars (LANGCHAIN_TRACING_V2); True/False forces on/off

@@ -55,6 +55,8 @@ class Propagator:
             "forward_report": "",
             "integrated_thesis_report": "",
             "verification_notes": "",
+            "verification_status": "pass",
+            "verification_attempts": 0,
         }
 
     def get_graph_args(self, callbacks: Optional[List] = None) -> Dict[str, Any]:

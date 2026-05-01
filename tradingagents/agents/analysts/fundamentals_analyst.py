@@ -3,13 +3,20 @@ from tradingagents.agents.utils.agent_utils import (
     build_instrument_context,
     get_balance_sheet,
     get_cashflow,
+    get_earnings_transcript_highlights,
     get_fundamentals,
     get_income_statement,
     get_insider_transactions,
+    get_sec_filing_highlights,
+    get_sec_filing_sections,
     get_language_instruction,
 )
 from tradingagents.agents.utils.analysis_framework import get_analysis_contract_suffix
-from tradingagents.agents.utils.calculator_tool import evaluate_math_expression
+from tradingagents.agents.utils.calculator_tool import (
+    evaluate_math_expression,
+    implied_cagr,
+    valuation_sensitivity_table,
+)
 from tradingagents.dataflows.config import get_config
 
 
@@ -24,7 +31,12 @@ def create_fundamentals_analyst(llm):
             get_cashflow,
             get_income_statement,
             get_insider_transactions,
+            get_sec_filing_highlights,
+            get_sec_filing_sections,
+            get_earnings_transcript_highlights,
             evaluate_math_expression,
+            implied_cagr,
+            valuation_sensitivity_table,
         ]
 
         system_message = (
@@ -33,9 +45,15 @@ def create_fundamentals_analyst(llm):
 Required process:
 1) Call `get_fundamentals` first for company profile and valuation baselines.
 2) Call `get_income_statement`, `get_balance_sheet`, and `get_cashflow` to verify trend direction.
-3) Call `get_insider_transactions` to assess management conviction and governance signals.
-4) Use `evaluate_math_expression` whenever you combine ratios, margins, or growth rates—do not chain arithmetic only in prose.
-5) Use evidence from all tools before writing your final report.
+3) Call `get_sec_filing_highlights` (10-K) for primary-source filing provenance.
+4) Call `get_sec_filing_sections` to fetch and read filing text content from the SEC URL.
+5) Use this practical order when citing filing evidence: MD&A -> Financial statements -> Footnotes -> Risk Factors -> Business context.
+6) Do not rely on metadata-only SEC rows for conclusions.
+7) Call `get_earnings_transcript_highlights` (or acknowledge stub/no data).
+8) Call `get_insider_transactions` to assess management conviction and governance signals.
+9) Use `evaluate_math_expression` and `implied_cagr` whenever you combine ratios, margins, or growth rates—do not chain arithmetic only in prose.
+10) If `enable_valuation_sensitivity_tables` is on, call `valuation_sensitivity_table` once for base/bull/bear valuation stress.
+11) Use evidence from all tools before writing your final report.
 
 Required report sections (use these exact headings):
 ## Executive Summary
@@ -55,6 +73,7 @@ Required report sections (use these exact headings):
 Rubric:
 - **Valuation triangulation**: you MUST use at least two independent anchors (e.g. relative multiple vs a peer or sector reference from tool data, plus a narrative implied-growth or margin sanity check). A single headline P/E or EV/EBITDA claim without peer/context is insufficient.
 - **Earnings quality**: compare profit vs cash generation using statements (e.g., net income path vs operating cash flow). Flag large or persistent gaps, unusual one-offs in revenue or expenses, and any concentration risks visible in the tool outputs. If footnotes are not in the data, say what you cannot see.
+- **SEC filing evidence is mandatory**: include at least two concrete observations that come from the fetched filing URL itself (not only API metadata or third-party commentary).
 - Anchor claims in specific figures (growth rates, margins, cash flow, leverage, dilution, returns).
 - Explicitly separate operating performance from non-recurring accounting noise where visible.
 - Include a 1-year and 3-year outlook with assumptions.
@@ -63,7 +82,7 @@ Rubric:
 - Be nuanced: discuss both upside and downside, then conclude with the highest-conviction interpretation.
 
 Finish with a Markdown table named "Key Fundamental Evidence Table" that summarizes the most decision-relevant metrics, trend direction, and implication."""
-            + " Use tools: `get_fundamentals`, `get_balance_sheet`, `get_cashflow`, `get_income_statement`, `get_insider_transactions`, and `evaluate_math_expression`."
+            + " Use tools: `get_fundamentals`, `get_balance_sheet`, `get_cashflow`, `get_income_statement`, `get_sec_filing_highlights`, `get_sec_filing_sections`, `get_earnings_transcript_highlights`, `get_insider_transactions`, `evaluate_math_expression`, `implied_cagr`, and optionally `valuation_sensitivity_table`."
             + get_analysis_contract_suffix()
             + get_language_instruction()
         )

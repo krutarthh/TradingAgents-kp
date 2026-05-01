@@ -59,6 +59,8 @@ class AgentState(MessagesState):
     forward_report: Annotated[str, "Forward-looking scenario and consensus report"]
     integrated_thesis_report: Annotated[str, "Synthesized cross-report thesis before debate"]
     verification_notes: Annotated[str, "Structural checks from verifier-lite before Research Manager"]
+    verification_status: Annotated[str, "Verification gate outcome: pass/warn/fail"]
+    verification_attempts: Annotated[int, "Number of verifier-triggered retries so far"]
 
     # researcher team discussion step
     investment_debate_state: Annotated[

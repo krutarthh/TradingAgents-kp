@@ -21,6 +21,12 @@ from .yfinance_forward import (
 from .fred_macro import get_macro_regime_fred
 from .config import DataVendorSkipped, get_config
 from .yfinance_news import get_news_yfinance, get_global_news_yfinance
+from .cnn_sentiment import get_fear_greed_index_cnn
+from .api_ninjas_sec import (
+    get_earnings_transcript_highlights_stub,
+    get_sec_filing_highlights_ninjas,
+    get_sec_filing_sections_ninjas,
+)
 from .alpha_vantage import (
     get_stock as get_alpha_vantage_stock,
     get_indicator as get_alpha_vantage_indicator,
@@ -55,7 +61,10 @@ TOOLS_CATEGORIES = {
             "get_fundamentals",
             "get_balance_sheet",
             "get_cashflow",
-            "get_income_statement"
+            "get_income_statement",
+            "get_sec_filing_highlights",
+            "get_sec_filing_sections",
+            "get_earnings_transcript_highlights",
         ]
     },
     "news_data": {
@@ -64,6 +73,7 @@ TOOLS_CATEGORIES = {
             "get_news",
             "get_global_news",
             "get_insider_transactions",
+            "get_fear_greed_index",
         ]
     },
     "forward_data": {
@@ -85,11 +95,8 @@ VENDOR_LIST = [
 
 
 def get_macro_regime_routed(curr_date: str) -> str:
-    """Official FRED macro plus yfinance oil/gold/credit/DXY proxies when FRED_API_KEY is set; otherwise full yfinance macro."""
-    try:
-        fred_block = get_macro_regime_fred(curr_date)
-    except DataVendorSkipped:
-        return get_macro_regime_yfinance(curr_date)
+    """Official FRED macro plus yfinance oil/gold/credit/DXY proxies."""
+    fred_block = get_macro_regime_fred(curr_date)
     complement = get_macro_regime_yfinance_complement(curr_date)
     return f"{fred_block}\n\n{complement}"
 
@@ -123,6 +130,15 @@ VENDOR_METHODS = {
         "alpha_vantage": get_alpha_vantage_income_statement,
         "yfinance": get_yfinance_income_statement,
     },
+    "get_sec_filing_highlights": {
+        "api_ninjas": get_sec_filing_highlights_ninjas,
+    },
+    "get_sec_filing_sections": {
+        "api_ninjas": get_sec_filing_sections_ninjas,
+    },
+    "get_earnings_transcript_highlights": {
+        "api_ninjas": get_earnings_transcript_highlights_stub,
+    },
     # news_data
     "get_news": {
         "alpha_vantage": get_alpha_vantage_news,
@@ -135,6 +151,9 @@ VENDOR_METHODS = {
     "get_insider_transactions": {
         "alpha_vantage": get_alpha_vantage_insider_transactions,
         "yfinance": get_yfinance_insider_transactions,
+    },
+    "get_fear_greed_index": {
+        "yfinance": get_fear_greed_index_cnn,
     },
     # forward_data
     "get_analyst_estimates": {
@@ -178,36 +197,27 @@ def get_vendor(category: str, method: str = None) -> str:
     return config.get("data_vendors", {}).get(category, "default")
 
 def route_to_vendor(method: str, *args, **kwargs):
-    """Route method calls to appropriate vendor implementation with fallback support."""
+    """Route method calls to a single configured vendor (strict mode)."""
     category = get_category_for_method(method)
     vendor_config = get_vendor(category, method)
-    primary_vendors = [v.strip() for v in vendor_config.split(',')]
+    configured_vendors = [v.strip() for v in str(vendor_config).split(",") if v.strip()]
+    if not configured_vendors:
+        raise RuntimeError(f"No configured vendor for '{method}'")
+    vendor = configured_vendors[0]
 
     if method not in VENDOR_METHODS:
         raise ValueError(f"Method '{method}' not supported")
+    if vendor not in VENDOR_METHODS[method]:
+        raise RuntimeError(f"Configured vendor '{vendor}' not available for '{method}'")
 
-    # Build fallback chain: primary vendors first, then remaining available vendors
-    all_available_vendors = list(VENDOR_METHODS[method].keys())
-    fallback_vendors = primary_vendors.copy()
-    for vendor in all_available_vendors:
-        if vendor not in fallback_vendors:
-            fallback_vendors.append(vendor)
-
-    for vendor in fallback_vendors:
-        if vendor not in VENDOR_METHODS[method]:
-            continue
-
-        vendor_impl = VENDOR_METHODS[method][vendor]
-        impl_func = vendor_impl[0] if isinstance(vendor_impl, list) else vendor_impl
-
-        try:
-            result = impl_func(*args, **kwargs)
-            if isinstance(result, str):
-                return prefix_string_body(method, vendor, result, args, kwargs)
-            return result
-        except AlphaVantageRateLimitError:
-            continue
-        except DataVendorSkipped:
-            continue
-
-    raise RuntimeError(f"No available vendor for '{method}'")
+    vendor_impl = VENDOR_METHODS[method][vendor]
+    impl_func = vendor_impl[0] if isinstance(vendor_impl, list) else vendor_impl
+    try:
+        result = impl_func(*args, **kwargs)
+    except (AlphaVantageRateLimitError, DataVendorSkipped) as exc:
+        raise RuntimeError(
+            f"Configured vendor '{vendor}' failed for '{method}': {exc}"
+        ) from exc
+    if isinstance(result, str):
+        return prefix_string_body(method, vendor, result, args, kwargs)
+    return result

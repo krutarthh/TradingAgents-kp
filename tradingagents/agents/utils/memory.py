@@ -17,6 +17,7 @@ class TradingMemoryLog:
     _REFLECTION_RE = re.compile(r"REFLECTION:\n(.*?)$", re.DOTALL)
     _THEMES_RE = re.compile(r"SECULAR_THEMES:\s*(.*)")
     _THESIS_BRIEF_RE = re.compile(r"THESIS_BRIEF:\n(.*?)(?=\nDECISION:|\Z)", re.DOTALL)
+    _INVALIDATION_RE = re.compile(r"THESIS_INVALIDATION:\n(.*?)(?=\n(?:DECISION|REFLECTION):|\Z)", re.DOTALL)
 
     def __init__(self, config: dict = None):
         cfg = config or {}
@@ -48,6 +49,7 @@ class TradingMemoryLog:
                     return
         rating = parse_rating(final_trade_decision)
         themes = self._extract_secular_themes_from_decision(final_trade_decision)
+        invalidation = self._extract_invalidation_from_decision(final_trade_decision)
         tag = f"[{trade_date} | {ticker} | {rating} | pending]"
         thesis_block = ""
         if integrated_thesis_report and integrated_thesis_report.strip():
@@ -56,16 +58,20 @@ class TradingMemoryLog:
                 "THESIS_BRIEF:\n"
                 f"{integrated_thesis_report.strip()[:cap]}\n\n"
             )
+        invalidation_block = ""
+        if invalidation:
+            invalidation_block = f"THESIS_INVALIDATION:\n{invalidation}\n\n"
         if themes:
             entry = (
                 f"{tag}\n\n"
                 f"{thesis_block}"
                 f"SECULAR_THEMES: {', '.join(themes)}\n\n"
+                f"{invalidation_block}"
                 f"DECISION:\n{final_trade_decision}{self._SEPARATOR}"
             )
         else:
             entry = (
-                f"{tag}\n\n{thesis_block}DECISION:\n{final_trade_decision}{self._SEPARATOR}"
+                f"{tag}\n\n{thesis_block}{invalidation_block}DECISION:\n{final_trade_decision}{self._SEPARATOR}"
             )
         with open(self._log_path, "a", encoding="utf-8") as f:
             f.write(entry)
@@ -111,6 +117,9 @@ class TradingMemoryLog:
         if same:
             parts.append(f"Past analyses of {ticker} (most recent first):")
             parts.extend(self._format_full(e) for e in same)
+            calib = self._calibration_summary(same)
+            if calib:
+                parts.append(calib)
         if cross:
             parts.append("Recent cross-ticker lessons:")
             parts.extend(self._format_reflection_only(e) for e in cross)
@@ -302,6 +311,8 @@ class TradingMemoryLog:
         entry["reflection"] = reflection_match.group(1).strip() if reflection_match else ""
         thesis_match = self._THESIS_BRIEF_RE.search(body)
         entry["thesis_brief"] = thesis_match.group(1).strip() if thesis_match else ""
+        invalidation_match = self._INVALIDATION_RE.search(body)
+        entry["invalidation_notes"] = invalidation_match.group(1).strip() if invalidation_match else self._extract_invalidation_from_decision(entry["decision"])
         themes_match = self._THEMES_RE.search(body)
         if themes_match:
             raw_themes = themes_match.group(1).strip()
@@ -324,6 +335,8 @@ class TradingMemoryLog:
         if e.get("secular_themes"):
             idx = 2 if e.get("thesis_brief") else 1
             parts.insert(idx, f"SECULAR_THEMES: {', '.join(e['secular_themes'])}")
+        if e.get("invalidation_notes"):
+            parts.append(f"THESIS_INVALIDATION:\n{e['invalidation_notes']}")
         if e["reflection"]:
             parts.append(f"REFLECTION:\n{e['reflection']}")
         return "\n\n".join(parts)
@@ -350,3 +363,38 @@ class TradingMemoryLog:
                 theme_part = cleaned.split(":", 1)[1].strip()
                 return [t.strip() for t in theme_part.split(",") if t.strip()]
         return []
+
+    @staticmethod
+    def _extract_invalidation_from_decision(decision: str) -> str:
+        if not decision:
+            return ""
+        lines = decision.splitlines()
+        capture = False
+        out: List[str] = []
+        for line in lines:
+            low = line.strip().lower()
+            if "invalidation" in low or "prove the bull thesis wrong" in low or "invalidate the bear thesis" in low:
+                capture = True
+            if capture:
+                if line.strip().startswith("## ") and out:
+                    break
+                out.append(line)
+        return "\n".join(out).strip()[:800]
+
+    def _calibration_summary(self, entries: List[dict]) -> str:
+        if not entries:
+            return ""
+        wins = 0
+        eligible = 0
+        for e in entries:
+            raw = e.get("raw") or ""
+            try:
+                val = float(raw.replace("%", ""))
+            except ValueError:
+                continue
+            eligible += 1
+            if val > 0:
+                wins += 1
+        if eligible == 0:
+            return ""
+        return f"Calibration summary: {wins}/{eligible} positive raw-return outcomes on recent same-ticker calls."

@@ -75,3 +75,30 @@ def get_income_statement(
         str: A formatted report containing income statement data
     """
     return route_to_vendor("get_income_statement", ticker, freq, curr_date)
+
+
+@tool
+def get_sec_filing_highlights(
+    ticker: Annotated[str, "ticker symbol"],
+    curr_date: Annotated[str, "current date you are trading at, yyyy-mm-dd"],
+) -> str:
+    """Retrieve latest SEC filing highlights (10-K only in v1) from API Ninjas."""
+    return route_to_vendor("get_sec_filing_highlights", ticker, curr_date)
+
+
+@tool
+def get_sec_filing_sections(
+    ticker: Annotated[str, "ticker symbol"],
+    curr_date: Annotated[str, "current date you are trading at, yyyy-mm-dd"],
+) -> str:
+    """Fetch latest 10-K URL from API Ninjas and extract key filing sections from the SEC HTML."""
+    return route_to_vendor("get_sec_filing_sections", ticker, curr_date)
+
+
+@tool
+def get_earnings_transcript_highlights(
+    ticker: Annotated[str, "ticker symbol"],
+    curr_date: Annotated[str, "current date you are trading at, yyyy-mm-dd"],
+) -> str:
+    """Retrieve transcript highlights when provider exists (stub fallback otherwise)."""
+    return route_to_vendor("get_earnings_transcript_highlights", ticker, curr_date)

@@ -167,7 +167,14 @@ class GraphSetup:
                 "Verification Gate": "Verification Gate",
             },
         )
-        workflow.add_edge("Verification Gate", "Research Manager")
+        workflow.add_conditional_edges(
+            "Verification Gate",
+            self.conditional_logic.should_continue_after_verification,
+            {
+                "Thesis Integrator": "Thesis Integrator",
+                "Research Manager": "Research Manager",
+            },
+        )
         workflow.add_edge("Research Manager", "Trader")
         workflow.add_edge("Trader", "Aggressive Analyst")
         workflow.add_conditional_edges(

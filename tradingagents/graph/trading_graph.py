@@ -36,14 +36,23 @@ from tradingagents.agents.utils.agent_utils import (
     get_income_statement,
     get_news,
     get_insider_transactions,
+    get_fear_greed_index,
     get_global_news,
     get_analyst_estimates,
     get_peer_comparables,
     get_macro_regime,
     get_sector_etf_trends,
     get_options_implied_move,
+    probability_weighted_price,
+    get_sec_filing_highlights,
+    get_sec_filing_sections,
+    get_earnings_transcript_highlights,
 )
-from tradingagents.agents.utils.calculator_tool import evaluate_math_expression
+from tradingagents.agents.utils.calculator_tool import (
+    evaluate_math_expression,
+    implied_cagr,
+    valuation_sensitivity_table,
+)
 
 from .checkpointer import checkpoint_step, clear_checkpoint, get_checkpointer, thread_id
 from .conditional_logic import ConditionalLogic
@@ -123,7 +132,9 @@ class TradingAgentsGraph:
             self.conditional_logic,
         )
 
-        self.propagator = Propagator()
+        self.propagator = Propagator(
+            max_recur_limit=int(self.config.get("max_recur_limit") or 250),
+        )
         self.reflector = Reflector(self.quick_thinking_llm)
         self.signal_processor = SignalProcessor(self.quick_thinking_llm)
 
@@ -168,6 +179,7 @@ class TradingAgentsGraph:
                     get_stock_data,
                     # Technical indicators
                     get_indicators,
+                    get_fear_greed_index,
                 ]
             ),
             "social": ToolNode(
@@ -181,6 +193,7 @@ class TradingAgentsGraph:
                     get_news,
                     get_global_news,
                     get_macro_regime,
+                    get_fear_greed_index,
                     get_insider_transactions,
                 ]
             ),
@@ -192,6 +205,11 @@ class TradingAgentsGraph:
                     get_income_statement,
                     get_insider_transactions,
                     evaluate_math_expression,
+                    implied_cagr,
+                    valuation_sensitivity_table,
+                    get_sec_filing_highlights,
+                    get_sec_filing_sections,
+                    get_earnings_transcript_highlights,
                 ]
             ),
             "forward": ToolNode(
@@ -202,7 +220,13 @@ class TradingAgentsGraph:
                     get_sector_etf_trends,
                     get_options_implied_move,
                     get_news,
+                    probability_weighted_price,
                     evaluate_math_expression,
+                    implied_cagr,
+                    valuation_sensitivity_table,
+                    get_sec_filing_highlights,
+                    get_sec_filing_sections,
+                    get_earnings_transcript_highlights,
                 ]
             ),
         }
@@ -379,6 +403,8 @@ class TradingAgentsGraph:
             "forward_report": final_state["forward_report"],
             "integrated_thesis_report": final_state.get("integrated_thesis_report", ""),
             "verification_notes": final_state.get("verification_notes", ""),
+            "verification_status": final_state.get("verification_status", "pass"),
+            "verification_attempts": final_state.get("verification_attempts", 0),
             "investment_debate_state": {
                 "bull_history": final_state["investment_debate_state"]["bull_history"],
                 "bear_history": final_state["investment_debate_state"]["bear_history"],

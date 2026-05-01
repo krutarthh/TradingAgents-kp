@@ -15,12 +15,16 @@ from tradingagents.agents.utils.fundamental_data_tools import (
     get_fundamentals,
     get_balance_sheet,
     get_cashflow,
-    get_income_statement
+    get_income_statement,
+    get_sec_filing_highlights,
+    get_sec_filing_sections,
+    get_earnings_transcript_highlights,
 )
 from tradingagents.agents.utils.news_data_tools import (
     get_news,
     get_insider_transactions,
-    get_global_news
+    get_global_news,
+    get_fear_greed_index,
 )
 from tradingagents.agents.utils.forward_data_tools import (
     get_analyst_estimates,
@@ -28,6 +32,7 @@ from tradingagents.agents.utils.forward_data_tools import (
     get_macro_regime,
     get_sector_etf_trends,
     get_options_implied_move,
+    probability_weighted_price,
 )
 
 

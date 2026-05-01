@@ -1,4 +1,4 @@
-"""Tests for thesis integrator fallback, verifier-lite, and tool metadata banners."""
+"""Tests for thesis integrator fallback, verifier-plus, and tool metadata banners."""
 
 from unittest.mock import MagicMock
 
@@ -29,7 +29,7 @@ def test_prefix_string_body_adds_banner():
 def test_verification_gate_ok_with_full_integrated_thesis(monkeypatch):
     monkeypatch.setattr(
         "tradingagents.agents.managers.verification_gate.get_config",
-        lambda: {"enable_verification_gate": True},
+        lambda: {"enable_verification_gate": True, "verification_max_retries": 1},
     )
     gate = create_verification_gate()
     state = {
@@ -48,12 +48,36 @@ bull/base/bear
 ## Catalysts and repricing
 - earnings
 """,
-        "forward_report": "## Executive Summary\nbull 30% base 40% bear 30%",
+        "forward_report": "## Executive Summary\n## Valuation Triangulation\nEvidence: model\nbull 30% base 40% bear 30%",
         "market_report": "## Executive Summary\nok",
-        "fundamentals_report": "## Executive Summary\nok",
+        "fundamentals_report": "## Executive Summary\n## Valuation Triangulation\nok",
+        "verification_attempts": 0,
     }
     out = gate(state)
+    assert out["verification_status"] == "pass"
     assert "OK" in out["verification_notes"]
+
+
+@pytest.mark.unit
+def test_verification_gate_fail_then_warn_after_retry_limit(monkeypatch):
+    monkeypatch.setattr(
+        "tradingagents.agents.managers.verification_gate.get_config",
+        lambda: {"enable_verification_gate": True, "verification_max_retries": 1},
+    )
+    gate = create_verification_gate()
+    failing_state = {
+        "integrated_thesis_report": "## Unified thesis\nmissing key sections",
+        "forward_report": "## Executive Summary\nwith numbers 15%",
+        "market_report": "## Executive Summary\nwith numbers 22%",
+        "fundamentals_report": "## Executive Summary\nwith numbers 10%",
+        "verification_attempts": 0,
+    }
+    out1 = gate(failing_state)
+    assert out1["verification_status"] == "fail"
+
+    failing_state["verification_attempts"] = 1
+    out2 = gate(failing_state)
+    assert out2["verification_status"] == "warn"
 
 
 @pytest.mark.unit

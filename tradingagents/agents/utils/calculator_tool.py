@@ -48,3 +48,46 @@ def evaluate_math_expression(
         return str(out)
     except Exception as exc:
         return f"Error evaluating expression: {exc}"
+
+
+@tool
+def implied_cagr(
+    start_value: Annotated[float, "starting value (must be > 0)"],
+    end_value: Annotated[float, "ending value (must be > 0)"],
+    years: Annotated[float, "number of years (must be > 0)"],
+) -> str:
+    """Compute implied CAGR for deterministic valuation sanity checks."""
+    try:
+        if start_value <= 0 or end_value <= 0 or years <= 0:
+            return "Error: start_value, end_value, and years must be > 0"
+        cagr = (end_value / start_value) ** (1.0 / years) - 1.0
+        return str(cagr)
+    except Exception as exc:
+        return f"Error computing implied CAGR: {exc}"
+
+
+@tool
+def valuation_sensitivity_table(
+    base_revenue: Annotated[float, "base annual revenue"],
+    base_margin: Annotated[float, "base operating margin as decimal (e.g., 0.25)"],
+    base_multiple: Annotated[float, "base EV/EBITDA or P/E-like multiple"],
+) -> str:
+    """Return a compact deterministic sensitivity table for valuation triangulation."""
+    try:
+        if base_revenue <= 0 or base_multiple <= 0:
+            return "Error: base_revenue and base_multiple must be > 0"
+        margin_shocks = [-0.03, 0.0, 0.03]
+        mult_shocks = [-2.0, 0.0, 2.0]
+        lines = [
+            "| Margin | Multiple | Implied Value Index |",
+            "|---|---:|---:|",
+        ]
+        for ms in margin_shocks:
+            m = max(0.01, base_margin + ms)
+            for xs in mult_shocks:
+                x = max(0.5, base_multiple + xs)
+                implied = base_revenue * m * x
+                lines.append(f"| {m:.2%} | {x:.2f}x | {implied:.2f} |")
+        return "\n".join(lines)
+    except Exception as exc:
+        return f"Error computing valuation sensitivity table: {exc}"
