@@ -99,17 +99,35 @@ MODEL_OPTIONS: ProviderModeOptions = {
             ("Custom model ID", "custom"),
         ],
     },
+    "nvidia": {
+        "quick": [
+            ("GLM-4.7 (NVIDIA, z-ai/glm4.7)", "glm-4.7"),
+            ("Llama 3.3 70B Instruct", "meta/llama-3.3-70b-instruct"),
+            ("Custom model ID", "custom"),
+        ],
+        "deep": [
+            ("GLM-4.7 (NVIDIA, z-ai/glm4.7)", "glm-4.7"),
+            ("Llama 3.3 70B Instruct", "meta/llama-3.3-70b-instruct"),
+            ("Custom model ID", "custom"),
+        ],
+    },
     # OpenRouter: fetched dynamically. Azure: any deployed model name.
     "ollama": {
         "quick": [
-            ("Qwen3:latest (8B, local)", "qwen3:latest"),
-            ("GPT-OSS:latest (20B, local)", "gpt-oss:latest"),
-            ("GLM-4.7-Flash:latest (30B, local)", "glm-4.7-flash:latest"),
+            ("gpt-oss:120b (Ollama Cloud)", "gpt-oss:120b"),
+            ("glm-4.7 (Ollama Cloud)", "glm-4.7"),
+            ("Qwen3:latest (local daemon)", "qwen3:latest"),
+            ("GPT-OSS:latest (local daemon)", "gpt-oss:latest"),
+            ("GLM-4.7-Flash:latest (local daemon)", "glm-4.7-flash:latest"),
+            ("Custom model ID", "custom"),
         ],
         "deep": [
-            ("GLM-4.7-Flash:latest (30B, local)", "glm-4.7-flash:latest"),
-            ("GPT-OSS:latest (20B, local)", "gpt-oss:latest"),
-            ("Qwen3:latest (8B, local)", "qwen3:latest"),
+            ("gpt-oss:120b (Ollama Cloud)", "gpt-oss:120b"),
+            ("glm-4.7 (Ollama Cloud)", "glm-4.7"),
+            ("GLM-4.7-Flash:latest (local daemon)", "glm-4.7-flash:latest"),
+            ("GPT-OSS:latest (local daemon)", "gpt-oss:latest"),
+            ("Qwen3:latest (local daemon)", "qwen3:latest"),
+            ("Custom model ID", "custom"),
         ],
     },
 }

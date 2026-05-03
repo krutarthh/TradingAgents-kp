@@ -1,4 +1,5 @@
 import os
+import warnings
 from typing import Any, Optional
 
 from langchain_openai import ChatOpenAI
@@ -46,8 +47,16 @@ _PROVIDER_CONFIG = {
     "deepseek": ("https://api.deepseek.com", "DEEPSEEK_API_KEY"),
     "qwen": ("https://dashscope-intl.aliyuncs.com/compatible-mode/v1", "DASHSCOPE_API_KEY"),
     "glm": ("https://api.z.ai/api/paas/v4/", "ZHIPU_API_KEY"),
+    "nvidia": ("https://integrate.api.nvidia.com/v1", "NVIDIA_API_KEY"),
     "openrouter": ("https://openrouter.ai/api/v1", "OPENROUTER_API_KEY"),
-    "ollama": ("http://localhost:11434/v1", None),
+}
+
+# Provider-specific model aliases to keep CLI-friendly names while
+# sending the exact upstream model IDs expected by vendor endpoints.
+_MODEL_ALIASES = {
+    "nvidia": {
+        "glm-4.7": "z-ai/glm4.7",
+    },
 }
 
 
@@ -73,10 +82,40 @@ class OpenAIClient(BaseLLMClient):
     def get_llm(self) -> Any:
         """Return configured ChatOpenAI instance."""
         self.warn_if_unknown_model()
-        llm_kwargs = {"model": self.model}
+        model = _MODEL_ALIASES.get(self.provider, {}).get(self.model, self.model)
+        llm_kwargs = {"model": model}
 
+        # Ollama: OpenAI-compatible /v1/chat/completions — local daemon or Ollama Cloud.
+        # Cloud: https://docs.ollama.com/cloud — use https://ollama.com/v1 + OLLAMA_API_KEY.
+        # Local: http://localhost:11434/v1 + api_key "ollama" (ignored by Ollama).
+        if self.provider == "ollama":
+            raw = (self.base_url or "").strip()
+            if raw:
+                llm_kwargs["base_url"] = raw.rstrip("/")
+            else:
+                llm_kwargs["base_url"] = "https://ollama.com/v1"
+            bu = llm_kwargs["base_url"].lower()
+            is_local = (
+                "localhost" in bu
+                or "127.0.0.1" in bu
+                or bu.startswith("http://127.")
+            )
+            if is_local:
+                llm_kwargs["api_key"] = self.kwargs.get("api_key") or "ollama"
+            else:
+                cloud_key = os.environ.get("OLLAMA_API_KEY")
+                if cloud_key:
+                    llm_kwargs["api_key"] = cloud_key
+                else:
+                    warnings.warn(
+                        "OLLAMA_API_KEY is not set. Ollama Cloud requires a key from "
+                        "https://ollama.com/settings/keys — requests will likely fail.",
+                        RuntimeWarning,
+                        stacklevel=2,
+                    )
+                    llm_kwargs["api_key"] = "ollama"
         # Provider-specific base URL and auth
-        if self.provider in _PROVIDER_CONFIG:
+        elif self.provider in _PROVIDER_CONFIG:
             base_url, api_key_env = _PROVIDER_CONFIG[self.provider]
             llm_kwargs["base_url"] = base_url
             if api_key_env:
