@@ -115,6 +115,7 @@ MODEL_OPTIONS: ProviderModeOptions = {
     "ollama": {
         "quick": [
             ("gpt-oss:120b (Ollama Cloud)", "gpt-oss:120b"),
+            ("gemma4:31b-cloud (Ollama Cloud)", "gemma4:31b-cloud"),
             ("glm-4.7 (Ollama Cloud)", "glm-4.7"),
             ("Qwen3:latest (local daemon)", "qwen3:latest"),
             ("GPT-OSS:latest (local daemon)", "gpt-oss:latest"),
@@ -123,6 +124,7 @@ MODEL_OPTIONS: ProviderModeOptions = {
         ],
         "deep": [
             ("gpt-oss:120b (Ollama Cloud)", "gpt-oss:120b"),
+            ("gemma4:31b-cloud (Ollama Cloud)", "gemma4:31b-cloud"),
             ("glm-4.7 (Ollama Cloud)", "glm-4.7"),
             ("GLM-4.7-Flash:latest (local daemon)", "glm-4.7-flash:latest"),
             ("GPT-OSS:latest (local daemon)", "gpt-oss:latest"),
