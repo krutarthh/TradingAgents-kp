@@ -180,6 +180,8 @@ class TradingAgentsGraph:
                     # Technical indicators
                     get_indicators,
                     get_fear_greed_index,
+                    get_peer_comparables,
+                    get_sector_etf_trends,
                 ]
             ),
             "social": ToolNode(

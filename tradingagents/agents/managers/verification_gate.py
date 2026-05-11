@@ -25,6 +25,30 @@ def _scenario_probability_notes(text: str) -> List[str]:
     return notes
 
 
+def _pillar_hint_notes(report_key: str, body: str) -> List[str]:
+    """Soft checks aligned with REPORT_PILLARS_COVERAGE / langsmith rubric."""
+    out: List[str] = []
+    if not (body or "").strip():
+        return out
+    low = body.lower()
+    if report_key == "market_report":
+        if "regime" not in low and "trend" not in low:
+            out.append("Market report may lack explicit regime/trend framing (technical pillar)")
+    elif report_key == "news_report":
+        if "macro" not in low and "liquidity" not in low and "rates" not in low:
+            out.append("News report may lack macro/liquidity framing (macro pillar)")
+    elif report_key == "fundamentals_report":
+        if "cash" not in low and "accrual" not in low and "free cash" not in low:
+            out.append(
+                "Fundamentals report may lack earnings-quality / cash-vs-accruals discussion "
+                "(consider when filings allow)"
+            )
+    elif report_key == "sentiment_report":
+        if "sentiment" not in low and "social" not in low:
+            out.append("Sentiment report may not anchor claims in sentiment/social evidence")
+    return out
+
+
 def _has_uncited_numbers(text: str) -> bool:
     if not text:
         return False
@@ -57,6 +81,7 @@ def create_verification_gate():
                 fails.append("missing heading in integrated thesis: ## Unified thesis")
             if not digest_mode:
                 for heading in (
+                    "## Cross-sectional facts (market vs sector vs benchmark)",
                     "## Cross-report conflicts",
                     "## Valuation non-negotiables",
                 ):
@@ -66,8 +91,17 @@ def create_verification_gate():
         fwd = state.get("forward_report") or ""
         notes.extend(_scenario_probability_notes(fwd))
 
+        mr_body = state.get("market_report") or ""
+        if mr_body.strip() and "## benchmark-relative dashboard" not in mr_body.lower():
+            notes.append(
+                "market_report may be missing required heading: ## Benchmark-Relative Dashboard "
+                "(cross-sectional vs SPY / sector ETF)"
+            )
+
         for label, key in (
             ("Market", "market_report"),
+            ("Sentiment", "sentiment_report"),
+            ("News", "news_report"),
             ("Fundamentals", "fundamentals_report"),
             ("Forward", "forward_report"),
         ):
@@ -76,6 +110,7 @@ def create_verification_gate():
                 notes.append(f"{label} report may be missing '## Executive Summary' heading")
             if _has_uncited_numbers(body):
                 notes.append(f"{label} report has numbers without clear citation/provenance text")
+            notes.extend(_pillar_hint_notes(key, body))
 
         if "valuation triangulation" not in (state.get("fundamentals_report") or "").lower():
             fails.append("fundamentals_report missing valuation triangulation section")

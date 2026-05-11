@@ -65,7 +65,7 @@ def test_route_to_vendor_sec_filings_hard_fails_when_key_missing(monkeypatch):
             "api_ninjas",
             interface.get_sec_filing_highlights_ninjas,
         )
-        with pytest.raises(RuntimeError, match="Configured vendor 'api_ninjas' failed"):
+        with pytest.raises(RuntimeError, match="All configured vendors failed"):
             interface.route_to_vendor("get_sec_filing_highlights", "SHOP", "2026-01-15")
 
 

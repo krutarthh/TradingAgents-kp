@@ -47,24 +47,25 @@ DEFAULT_CONFIG = {
     # Data vendor configuration
     # Category-level configuration (default for all tools in category)
     "data_vendors": {
-        "core_stock_apis": "yfinance",       # Options: alpha_vantage, yfinance
-        "technical_indicators": "yfinance",  # Options: alpha_vantage, yfinance
-        "fundamental_data": "yfinance",      # Options: alpha_vantage, yfinance
-        "news_data": "yfinance",             # Options: alpha_vantage, yfinance
-        "forward_data": "yfinance",          # Options: yfinance
+        # Comma-separated = try in order (rate limits / skipped vendors fall through).
+        "core_stock_apis": "yfinance,alpha_vantage",
+        "technical_indicators": "yfinance,alpha_vantage",
+        "fundamental_data": "yfinance,alpha_vantage",
+        "news_data": "yfinance,alpha_vantage",
+        "forward_data": "yfinance",
     },
     # Tool-level configuration (takes precedence over category-level)
     "tool_vendors": {
         # Example: "get_stock_data": "alpha_vantage",  # Override category default
         "get_sec_filing_highlights": "api_ninjas",
         "get_sec_filing_sections": "api_ninjas",
-        "get_earnings_transcript_highlights": "api_ninjas",
+        "get_earnings_transcript_highlights": "financial_modeling_prep,stub",
         "get_fear_greed_index": "yfinance",
     },
     # LLM context: cap each analyst report inlined in bull/bear/risk prompts (None = no cap)
-    "max_chars_per_report_in_debate": None,
+    "max_chars_per_report_in_debate": 12000,
     # Excerpt length per report in Research Manager / Trader evidence digest
-    "analyst_evidence_digest_max_chars_per_report": 1200,
+    "analyst_evidence_digest_max_chars_per_report": 1800,
     # Methodology extras (thesis integrator + verifier-lite before Research Manager)
     "enable_thesis_integrator": True,
     "enable_verification_gate": True,

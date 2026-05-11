@@ -5,6 +5,7 @@ from typing import Any, Optional
 from langchain_openai import ChatOpenAI
 
 from .base_client import BaseLLMClient, normalize_content
+from .transient_retry import invoke_with_transient_retries
 from .validators import validate_model
 
 
@@ -17,7 +18,12 @@ class NormalizedChatOpenAI(ChatOpenAI):
     """
 
     def invoke(self, input, config=None, **kwargs):
-        return normalize_content(super().invoke(input, config, **kwargs))
+        parent = super()
+
+        def call():
+            return parent.invoke(input, config, **kwargs)
+
+        return normalize_content(invoke_with_transient_retries(call))
 
     def with_structured_output(self, schema, *, method=None, **kwargs):
         """Wrap with structured output, defaulting to function_calling for OpenAI.
@@ -131,6 +137,12 @@ class OpenAIClient(BaseLLMClient):
         for key in _PASSTHROUGH_KWARGS:
             if key in self.kwargs:
                 llm_kwargs[key] = self.kwargs[key]
+
+        # SDK-level retries (429/stream disconnect); we also retry 5xx in NormalizedChatOpenAI.invoke.
+        llm_kwargs.setdefault(
+            "max_retries",
+            int(os.getenv("OPENAI_CLIENT_MAX_RETRIES", "3")),
+        )
 
         # Native OpenAI: use Responses API for consistent behavior across
         # all model families. Third-party providers use Chat Completions.

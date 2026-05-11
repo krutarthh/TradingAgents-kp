@@ -4,6 +4,7 @@ from typing import Any, Optional
 from langchain_openai import AzureChatOpenAI
 
 from .base_client import BaseLLMClient, normalize_content
+from .transient_retry import invoke_with_transient_retries
 from .validators import validate_model
 
 _PASSTHROUGH_KWARGS = (
@@ -16,7 +17,12 @@ class NormalizedAzureChatOpenAI(AzureChatOpenAI):
     """AzureChatOpenAI with normalized content output."""
 
     def invoke(self, input, config=None, **kwargs):
-        return normalize_content(super().invoke(input, config, **kwargs))
+        parent = super()
+
+        def call():
+            return parent.invoke(input, config, **kwargs)
+
+        return normalize_content(invoke_with_transient_retries(call))
 
 
 class AzureOpenAIClient(BaseLLMClient):
@@ -44,6 +50,11 @@ class AzureOpenAIClient(BaseLLMClient):
         for key in _PASSTHROUGH_KWARGS:
             if key in self.kwargs:
                 llm_kwargs[key] = self.kwargs[key]
+
+        llm_kwargs.setdefault(
+            "max_retries",
+            int(os.getenv("OPENAI_CLIENT_MAX_RETRIES", "3")),
+        )
 
         return NormalizedAzureChatOpenAI(**llm_kwargs)
 

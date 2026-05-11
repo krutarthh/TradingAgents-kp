@@ -29,6 +29,8 @@ def create_thesis_integrator(llm):
                     "| Assumption | Source | If wrong, what breaks |\n"
                     "|------------|--------|----------------------|\n"
                     "| (populate from full reports when re-enabling integrator) | digest | — |\n\n"
+                    "## Cross-sectional facts (market vs sector vs benchmark)\n"
+                    "- Pull RS vs SPY / sector ETF lines **only** from digest excerpts (Market / Forward).\n\n"
                     "## Cross-report conflicts\n"
                     "- Compare digest sections above for disagreements.\n\n"
                     "## Valuation non-negotiables\n"
@@ -64,6 +66,10 @@ Produce the following sections with these EXACT markdown headings:
 
 ## Unified thesis
 - One line each for bull, base, and bear (outcome-focused, not slogans).
+
+## Cross-sectional facts (market vs sector vs benchmark)
+- Short bullet list **only** recombined from numbers already present in Market or Forward reports (e.g. relative strength vs SPY, sector ETF momentum class, peer return rankings).
+- After each bullet, note parenthetically which report the figures came from (Market vs Forward). Do not invent new statistics.
 
 ## Assumptions table
 | Assumption | Source report / tool named in text | If wrong, what breaks |

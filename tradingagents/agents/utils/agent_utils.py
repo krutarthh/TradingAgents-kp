@@ -97,8 +97,9 @@ def build_analyst_evidence_digest(state: dict) -> str:
     ]
     lines = [
         "## Analyst evidence digest",
-        "Truncated excerpts from primary analyst outputs. Use with the investment plan and debate;",
-        "do not treat this as the full reports.",
+        "Truncated excerpts from primary analyst outputs. Prefer **Fact → Evidence (tool name)** → "
+        "Implication in the full lane reports; resolve conflicts by citing tool banners.",
+        "Use this digest with the investment plan and debate — not as a substitute for full reports.",
         "",
     ]
     for title, key in labels:

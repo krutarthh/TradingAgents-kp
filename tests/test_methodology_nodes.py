@@ -36,6 +36,9 @@ def test_verification_gate_ok_with_full_integrated_thesis(monkeypatch):
         "integrated_thesis_report": """## Unified thesis
 bull/base/bear
 
+## Cross-sectional facts (market vs sector vs benchmark)
+- Instrument RS vs SPY inline with sector ETF (Market + Forward).
+
 ## Assumptions table
 | a | b | c |
 
@@ -49,8 +52,10 @@ bull/base/bear
 - earnings
 """,
         "forward_report": "## Executive Summary\n## Valuation Triangulation\nEvidence: model\nbull 30% base 40% bear 30%",
-        "market_report": "## Executive Summary\nok",
-        "fundamentals_report": "## Executive Summary\n## Valuation Triangulation\nok",
+        "market_report": "## Benchmark-Relative Dashboard\n| Lens | Metric | NVDA | SPY | XLK | Lead |\n| --- | --- | --- | --- | --- | --- |\n## Executive Summary\nMarket regime trend continuation.",
+        "sentiment_report": "## Executive Summary\nSocial sentiment neutral.",
+        "news_report": "## Executive Summary\nMacro liquidity and rates stable.",
+        "fundamentals_report": "## Executive Summary\n## Valuation Triangulation\nFree cash flow supports multiples.",
         "verification_attempts": 0,
     }
     out = gate(state)
@@ -100,5 +105,6 @@ def test_thesis_integrator_digest_fallback_has_required_headings(monkeypatch):
     text = result["integrated_thesis_report"]
     assert "## Unified thesis" in text
     assert "Thesis integrator LLM disabled" in text
+    assert "## Cross-sectional facts" in text
     assert "## Cross-report conflicts" in text
     assert "## Valuation non-negotiables" in text

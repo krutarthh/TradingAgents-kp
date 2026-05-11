@@ -27,6 +27,7 @@ from .api_ninjas_sec import (
     get_sec_filing_highlights_ninjas,
     get_sec_filing_sections_ninjas,
 )
+from .fmp_transcripts import get_earnings_transcript_highlights_fmp
 from .alpha_vantage import (
     get_stock as get_alpha_vantage_stock,
     get_indicator as get_alpha_vantage_indicator,
@@ -91,6 +92,7 @@ TOOLS_CATEGORIES = {
 VENDOR_LIST = [
     "yfinance",
     "alpha_vantage",
+    "financial_modeling_prep",
 ]
 
 
@@ -137,7 +139,10 @@ VENDOR_METHODS = {
         "api_ninjas": get_sec_filing_sections_ninjas,
     },
     "get_earnings_transcript_highlights": {
+        "financial_modeling_prep": get_earnings_transcript_highlights_fmp,
+        # Historical config key — transcript ingestion was stub-only under Ninjas.
         "api_ninjas": get_earnings_transcript_highlights_stub,
+        "stub": get_earnings_transcript_highlights_stub,
     },
     # news_data
     "get_news": {
@@ -197,27 +202,34 @@ def get_vendor(category: str, method: str = None) -> str:
     return config.get("data_vendors", {}).get(category, "default")
 
 def route_to_vendor(method: str, *args, **kwargs):
-    """Route method calls to a single configured vendor (strict mode)."""
+    """Route tool calls to configured vendor(s); comma-separated names try in order."""
     category = get_category_for_method(method)
     vendor_config = get_vendor(category, method)
     configured_vendors = [v.strip() for v in str(vendor_config).split(",") if v.strip()]
     if not configured_vendors:
         raise RuntimeError(f"No configured vendor for '{method}'")
-    vendor = configured_vendors[0]
 
     if method not in VENDOR_METHODS:
         raise ValueError(f"Method '{method}' not supported")
-    if vendor not in VENDOR_METHODS[method]:
-        raise RuntimeError(f"Configured vendor '{vendor}' not available for '{method}'")
 
-    vendor_impl = VENDOR_METHODS[method][vendor]
-    impl_func = vendor_impl[0] if isinstance(vendor_impl, list) else vendor_impl
-    try:
-        result = impl_func(*args, **kwargs)
-    except (AlphaVantageRateLimitError, DataVendorSkipped) as exc:
+    last_error: BaseException | None = None
+    for vendor in configured_vendors:
+        if vendor not in VENDOR_METHODS[method]:
+            last_error = RuntimeError(f"Vendor '{vendor}' not available for '{method}'")
+            continue
+        vendor_impl = VENDOR_METHODS[method][vendor]
+        impl_func = vendor_impl[0] if isinstance(vendor_impl, list) else vendor_impl
+        try:
+            result = impl_func(*args, **kwargs)
+        except (AlphaVantageRateLimitError, DataVendorSkipped) as exc:
+            last_error = exc
+            continue
+        if isinstance(result, str):
+            return prefix_string_body(method, vendor, result, args, kwargs)
+        return result
+
+    if last_error is not None:
         raise RuntimeError(
-            f"Configured vendor '{vendor}' failed for '{method}': {exc}"
-        ) from exc
-    if isinstance(result, str):
-        return prefix_string_body(method, vendor, result, args, kwargs)
-    return result
+            f"All configured vendors failed for '{method}' (tried: {', '.join(configured_vendors)})"
+        ) from last_error
+    raise RuntimeError(f"No usable vendor implementation for '{method}'")

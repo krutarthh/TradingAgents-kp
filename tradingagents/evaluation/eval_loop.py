@@ -116,3 +116,27 @@ def weighted_rubric_score(scores: Dict[str, float], weights: Optional[Dict[str, 
         return 0.0
     num = sum(float(scores[k]) * max(0.0, float(weights.get(k, 0.0))) for k in scores)
     return num / denom
+
+
+# Frozen replay-friendly cases for methodology regressions (pair with LangSmith rubric scoring offline).
+DEFAULT_REPLAY_EVAL_CASES: Tuple[EvalCase, ...] = (
+    EvalCase(ticker="SPY", trade_date="2024-06-03"),
+    EvalCase(ticker="AAPL", trade_date="2024-06-03"),
+)
+
+
+def enrich_eval_rows_with_rubric_metadata(rows: List[Dict]) -> List[Dict]:
+    """Merge LangSmith-style dataset metadata into 60d label rows."""
+    from tradingagents.evaluation.langsmith_rubric import suggested_langsmith_dataset_metadata
+
+    out: List[Dict] = []
+    for row in rows:
+        ticker = row.get("ticker")
+        td = row.get("trade_date")
+        if ticker is None or td is None:
+            raise ValueError("each row must include ticker and trade_date")
+        meta = suggested_langsmith_dataset_metadata(str(ticker), str(td))
+        merged = dict(row)
+        merged.update(meta)
+        out.append(merged)
+    return out
