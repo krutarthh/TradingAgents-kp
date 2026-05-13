@@ -50,6 +50,37 @@ def _load_universe(path: Path) -> Dict[str, Any]:
         return json.load(f)
 
 
+def _load_existing_csv(path: Path) -> List[Dict[str, Any]]:
+    """Read prior eval_results.csv into a list of dict rows (string-typed)."""
+    if not path.exists():
+        return []
+    with open(path, newline="", encoding="utf-8") as f:
+        return list(csv.DictReader(f))
+
+
+def _row_needs_rerun(row: Dict[str, Any]) -> bool:
+    """A row needs rerun if it has an error or no rating string."""
+    err = (row.get("error") or "").strip()
+    rating = (row.get("rating") or "").strip()
+    return bool(err) or not rating
+
+
+def _coerce_csv_floats(row: Dict[str, Any], horizons: List[int]) -> Dict[str, Any]:
+    """Convert string return columns from CSV back to floats (or None)."""
+    out = dict(row)
+    for h in horizons:
+        for col in (f"raw_return_{h}d", f"alpha_return_{h}d"):
+            val = out.get(col)
+            if val is None or val == "":
+                out[col] = None
+            else:
+                try:
+                    out[col] = float(val)
+                except (TypeError, ValueError):
+                    out[col] = None
+    return out
+
+
 def _merge_eval_config(
     out_dir: Path,
     run_id: str,
@@ -120,6 +151,12 @@ def main() -> int:
         help="Parallel process count for full runs (each job isolated; 1 = sequential).",
     )
     p.add_argument("--skip-rubric-artifacts", action="store_true")
+    p.add_argument(
+        "--resume-from",
+        type=Path,
+        default=None,
+        help="Existing eval_results.csv: rerun only rows with errors / empty rating; keep others.",
+    )
     args = p.parse_args()
 
     universe = _load_universe(args.universe)
@@ -199,10 +236,31 @@ def main() -> int:
         fieldnames.extend([f"raw_return_{h}d", f"alpha_return_{h}d"])
 
     rows_out: List[Dict[str, Any]] = []
+    kept_rows: List[Dict[str, Any]] = []
+    rerun_keys: set = set()
+
+    if args.resume_from is not None:
+        prior = _load_existing_csv(args.resume_from.resolve())
+        for prior_row in prior:
+            key = (prior_row.get("ticker", "").strip().upper(), prior_row.get("trade_date", "").strip())
+            if not key[0] or not key[1]:
+                continue
+            if _row_needs_rerun(prior_row):
+                rerun_keys.add(key)
+            else:
+                kept_rows.append(_coerce_csv_floats(prior_row, horizons))
+        if not rerun_keys:
+            print(f"--resume-from: no failed rows in {args.resume_from}. Nothing to do.")
+            # Still rewrite outputs with the prior data for consistency.
+            rows_out = kept_rows
+        else:
+            print(f"--resume-from: {len(rerun_keys)} row(s) need rerun: {sorted(rerun_keys)}")
 
     jobs: List[Dict[str, Any]] = []
     for anchor in anchors:
         for ticker in tickers:
+            if args.resume_from is not None and (ticker, anchor) not in rerun_keys:
+                continue
             cfg = base_cfg.copy()
             cfg["memory_log_path"] = str(
                 out_dir / "memory" / f"{ticker}_{anchor.replace('-', '')}_{run_id}.md"
@@ -222,15 +280,17 @@ def main() -> int:
                 }
             )
 
+    new_rows: List[Dict[str, Any]] = []
     if args.workers <= 1:
         for job in jobs:
-            rows_out.append(run_single_pipeline_eval(job))
+            new_rows.append(run_single_pipeline_eval(job))
     else:
         with ProcessPoolExecutor(max_workers=args.workers) as ex:
             futures = {ex.submit(run_single_pipeline_eval, j): j for j in jobs}
             for fut in as_completed(futures):
-                rows_out.append(fut.result())
+                new_rows.append(fut.result())
 
+    rows_out = kept_rows + new_rows
     rows_out.sort(key=lambda r: (r["trade_date"], r["ticker"]))
 
     with open(csv_path, "w", newline="", encoding="utf-8") as f:
