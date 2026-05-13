@@ -1,9 +1,9 @@
-"""Dataset and scoring helpers for 60d methodology eval loops."""
+"""Dataset and scoring helpers for methodology eval loops (multi-horizon forward returns)."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from typing import Dict, Iterable, List, Optional, Tuple
 
 import yfinance as yf
@@ -31,14 +31,28 @@ def _closest_prior_close(series, anchor: datetime):
     return float(valid["Close"].iloc[-1])
 
 
-def compute_60d_label(
+def compute_forward_return_label(
     ticker: str,
     trade_date: str,
+    horizon_days: int,
     benchmark_ticker: str = "SPY",
+    *,
+    observable_through: Optional[date] = None,
 ) -> Optional[Dict[str, float]]:
-    """Compute 60 calendar-day raw and alpha return labels."""
+    """Compute raw and benchmark-relative return over ``horizon_days`` calendar days.
+
+    Uses prior closes on or before ``trade_date`` and on or before ``trade_date + horizon_days``.
+    Returns None if the forward horizon extends beyond ``observable_through`` (default: today),
+    or if Yahoo history is insufficient.
+
+    Alpha vs benchmark: raw_stock - raw_benchmark over the same windows.
+    """
+    observable_through = observable_through or date.today()
     start_dt = datetime.strptime(trade_date, "%Y-%m-%d")
-    end_dt = start_dt + timedelta(days=60)
+    end_dt = start_dt + timedelta(days=horizon_days)
+    if end_dt.date() > observable_through:
+        return None
+
     fetch_start = (start_dt - timedelta(days=7)).strftime("%Y-%m-%d")
     fetch_end = (end_dt + timedelta(days=7)).strftime("%Y-%m-%d")
 
@@ -59,8 +73,24 @@ def compute_60d_label(
     raw = (s1 - s0) / s0
     alpha = raw - ((b1 - b0) / b0)
     return {
-        "raw_return_60d": raw,
-        "alpha_return_60d": alpha,
+        "horizon_days": float(horizon_days),
+        "raw_return": raw,
+        "alpha_return": alpha,
+    }
+
+
+def compute_60d_label(
+    ticker: str,
+    trade_date: str,
+    benchmark_ticker: str = "SPY",
+) -> Optional[Dict[str, float]]:
+    """Compute 60 calendar-day raw and alpha return labels (backward-compatible keys)."""
+    out = compute_forward_return_label(ticker, trade_date, 60, benchmark_ticker)
+    if not out:
+        return None
+    return {
+        "raw_return_60d": out["raw_return"],
+        "alpha_return_60d": out["alpha_return"],
     }
 
 
@@ -68,7 +98,7 @@ def build_eval_rows(
     cases: Iterable[EvalCase],
     benchmark_ticker: str = "SPY",
 ) -> List[Dict]:
-    """Build frozen eval rows, skipping rows with unavailable labels."""
+    """Build frozen eval rows (60d only), skipping rows with unavailable labels."""
     rows: List[Dict] = []
     for case in cases:
         label = compute_60d_label(case.ticker, case.trade_date, benchmark_ticker)
@@ -118,7 +148,6 @@ def weighted_rubric_score(scores: Dict[str, float], weights: Optional[Dict[str, 
     return num / denom
 
 
-# Frozen replay-friendly cases for methodology regressions (pair with LangSmith rubric scoring offline).
 DEFAULT_REPLAY_EVAL_CASES: Tuple[EvalCase, ...] = (
     EvalCase(ticker="SPY", trade_date="2024-06-03"),
     EvalCase(ticker="AAPL", trade_date="2024-06-03"),
@@ -126,7 +155,7 @@ DEFAULT_REPLAY_EVAL_CASES: Tuple[EvalCase, ...] = (
 
 
 def enrich_eval_rows_with_rubric_metadata(rows: List[Dict]) -> List[Dict]:
-    """Merge LangSmith-style dataset metadata into 60d label rows."""
+    """Merge LangSmith-style dataset metadata into eval rows."""
     from tradingagents.evaluation.langsmith_rubric import suggested_langsmith_dataset_metadata
 
     out: List[Dict] = []
@@ -139,4 +168,30 @@ def enrich_eval_rows_with_rubric_metadata(rows: List[Dict]) -> List[Dict]:
         merged = dict(row)
         merged.update(meta)
         out.append(merged)
+    return out
+
+
+def join_forward_labels_for_tickers(
+    ticker: str,
+    trade_date: str,
+    horizons: Iterable[int],
+    benchmark_ticker: str = "SPY",
+    observable_through: Optional[date] = None,
+) -> Dict[str, Optional[float]]:
+    """Return flat dict keys raw_return_{h}d and alpha_return_{h}d for each horizon (or None)."""
+    out: Dict[str, Optional[float]] = {}
+    for h in horizons:
+        label = compute_forward_return_label(
+            ticker,
+            trade_date,
+            int(h),
+            benchmark_ticker,
+            observable_through=observable_through,
+        )
+        if label is None:
+            out[f"raw_return_{h}d"] = None
+            out[f"alpha_return_{h}d"] = None
+        else:
+            out[f"raw_return_{h}d"] = label["raw_return"]
+            out[f"alpha_return_{h}d"] = label["alpha_return"]
     return out

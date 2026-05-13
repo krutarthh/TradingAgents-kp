@@ -1,0 +1,18 @@
+{
+  "description": "Long-term pipeline eval — diversified pilot universe (US-listed where possible). META: Yahoo often maps historical FB; adjust per environment.",
+  "anchors": ["2015-05-12", "2020-05-12", "2025-05-12"],
+  "horizons_calendar_days": [60, 365, 1095],
+  "benchmark_ticker": "SPY",
+  "tickers": [
+    "NVDA",
+    "TSM",
+    "AAPL",
+    "MSFT",
+    "JPM",
+    "XOM",
+    "UNH",
+    "WMT",
+    "CAT",
+    "META"
+  ]
+}
