@@ -67,6 +67,9 @@ def _merge_eval_config(
         cfg["backend_url"] = backend_url
     cfg["checkpoint_enabled"] = False
     cfg["max_recur_limit"] = max_recur_limit
+    # Match CLI "Shallow" research depth (see cli/utils.py DEPTH_OPTIONS: 1=shallow, 3=medium, 5=deep).
+    cfg["max_debate_rounds"] = 1
+    cfg["max_risk_discuss_rounds"] = 1
     cfg["results_dir"] = str(out_dir / "ta_results")
     cfg["memory_log_path"] = str(out_dir / "memory" / f"batch_{run_id}.md")
     return cfg
@@ -169,6 +172,9 @@ def main() -> int:
                 "tickers": tickers,
                 "observable_through": str(run_date),
                 "eval_workers": args.workers,
+                "research_depth": "shallow",
+                "max_debate_rounds": 1,
+                "max_risk_discuss_rounds": 1,
             },
             indent=2,
         ),
