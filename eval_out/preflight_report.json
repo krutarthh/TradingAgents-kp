@@ -1,0 +1,637 @@
+{
+  "total_checks": 90,
+  "ok": 80,
+  "fail": 10,
+  "rows": [
+    {
+      "ticker": "NVDA",
+      "anchor": "2015-05-12",
+      "horizon_days": 60,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "NVDA",
+      "anchor": "2015-05-12",
+      "horizon_days": 365,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "NVDA",
+      "anchor": "2015-05-12",
+      "horizon_days": 1095,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "NVDA",
+      "anchor": "2020-05-12",
+      "horizon_days": 60,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "NVDA",
+      "anchor": "2020-05-12",
+      "horizon_days": 365,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "NVDA",
+      "anchor": "2020-05-12",
+      "horizon_days": 1095,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "NVDA",
+      "anchor": "2025-05-12",
+      "horizon_days": 60,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "NVDA",
+      "anchor": "2025-05-12",
+      "horizon_days": 365,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "NVDA",
+      "anchor": "2025-05-12",
+      "horizon_days": 1095,
+      "ok": false,
+      "detail": "forward end date after run_date (2026-05-13); label not yet observable"
+    },
+    {
+      "ticker": "TSM",
+      "anchor": "2015-05-12",
+      "horizon_days": 60,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "TSM",
+      "anchor": "2015-05-12",
+      "horizon_days": 365,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "TSM",
+      "anchor": "2015-05-12",
+      "horizon_days": 1095,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "TSM",
+      "anchor": "2020-05-12",
+      "horizon_days": 60,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "TSM",
+      "anchor": "2020-05-12",
+      "horizon_days": 365,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "TSM",
+      "anchor": "2020-05-12",
+      "horizon_days": 1095,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "TSM",
+      "anchor": "2025-05-12",
+      "horizon_days": 60,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "TSM",
+      "anchor": "2025-05-12",
+      "horizon_days": 365,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "TSM",
+      "anchor": "2025-05-12",
+      "horizon_days": 1095,
+      "ok": false,
+      "detail": "forward end date after run_date (2026-05-13); label not yet observable"
+    },
+    {
+      "ticker": "AAPL",
+      "anchor": "2015-05-12",
+      "horizon_days": 60,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "AAPL",
+      "anchor": "2015-05-12",
+      "horizon_days": 365,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "AAPL",
+      "anchor": "2015-05-12",
+      "horizon_days": 1095,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "AAPL",
+      "anchor": "2020-05-12",
+      "horizon_days": 60,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "AAPL",
+      "anchor": "2020-05-12",
+      "horizon_days": 365,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "AAPL",
+      "anchor": "2020-05-12",
+      "horizon_days": 1095,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "AAPL",
+      "anchor": "2025-05-12",
+      "horizon_days": 60,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "AAPL",
+      "anchor": "2025-05-12",
+      "horizon_days": 365,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "AAPL",
+      "anchor": "2025-05-12",
+      "horizon_days": 1095,
+      "ok": false,
+      "detail": "forward end date after run_date (2026-05-13); label not yet observable"
+    },
+    {
+      "ticker": "MSFT",
+      "anchor": "2015-05-12",
+      "horizon_days": 60,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "MSFT",
+      "anchor": "2015-05-12",
+      "horizon_days": 365,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "MSFT",
+      "anchor": "2015-05-12",
+      "horizon_days": 1095,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "MSFT",
+      "anchor": "2020-05-12",
+      "horizon_days": 60,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "MSFT",
+      "anchor": "2020-05-12",
+      "horizon_days": 365,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "MSFT",
+      "anchor": "2020-05-12",
+      "horizon_days": 1095,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "MSFT",
+      "anchor": "2025-05-12",
+      "horizon_days": 60,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "MSFT",
+      "anchor": "2025-05-12",
+      "horizon_days": 365,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "MSFT",
+      "anchor": "2025-05-12",
+      "horizon_days": 1095,
+      "ok": false,
+      "detail": "forward end date after run_date (2026-05-13); label not yet observable"
+    },
+    {
+      "ticker": "JPM",
+      "anchor": "2015-05-12",
+      "horizon_days": 60,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "JPM",
+      "anchor": "2015-05-12",
+      "horizon_days": 365,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "JPM",
+      "anchor": "2015-05-12",
+      "horizon_days": 1095,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "JPM",
+      "anchor": "2020-05-12",
+      "horizon_days": 60,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "JPM",
+      "anchor": "2020-05-12",
+      "horizon_days": 365,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "JPM",
+      "anchor": "2020-05-12",
+      "horizon_days": 1095,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "JPM",
+      "anchor": "2025-05-12",
+      "horizon_days": 60,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "JPM",
+      "anchor": "2025-05-12",
+      "horizon_days": 365,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "JPM",
+      "anchor": "2025-05-12",
+      "horizon_days": 1095,
+      "ok": false,
+      "detail": "forward end date after run_date (2026-05-13); label not yet observable"
+    },
+    {
+      "ticker": "XOM",
+      "anchor": "2015-05-12",
+      "horizon_days": 60,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "XOM",
+      "anchor": "2015-05-12",
+      "horizon_days": 365,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "XOM",
+      "anchor": "2015-05-12",
+      "horizon_days": 1095,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "XOM",
+      "anchor": "2020-05-12",
+      "horizon_days": 60,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "XOM",
+      "anchor": "2020-05-12",
+      "horizon_days": 365,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "XOM",
+      "anchor": "2020-05-12",
+      "horizon_days": 1095,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "XOM",
+      "anchor": "2025-05-12",
+      "horizon_days": 60,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "XOM",
+      "anchor": "2025-05-12",
+      "horizon_days": 365,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "XOM",
+      "anchor": "2025-05-12",
+      "horizon_days": 1095,
+      "ok": false,
+      "detail": "forward end date after run_date (2026-05-13); label not yet observable"
+    },
+    {
+      "ticker": "UNH",
+      "anchor": "2015-05-12",
+      "horizon_days": 60,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "UNH",
+      "anchor": "2015-05-12",
+      "horizon_days": 365,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "UNH",
+      "anchor": "2015-05-12",
+      "horizon_days": 1095,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "UNH",
+      "anchor": "2020-05-12",
+      "horizon_days": 60,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "UNH",
+      "anchor": "2020-05-12",
+      "horizon_days": 365,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "UNH",
+      "anchor": "2020-05-12",
+      "horizon_days": 1095,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "UNH",
+      "anchor": "2025-05-12",
+      "horizon_days": 60,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "UNH",
+      "anchor": "2025-05-12",
+      "horizon_days": 365,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "UNH",
+      "anchor": "2025-05-12",
+      "horizon_days": 1095,
+      "ok": false,
+      "detail": "forward end date after run_date (2026-05-13); label not yet observable"
+    },
+    {
+      "ticker": "WMT",
+      "anchor": "2015-05-12",
+      "horizon_days": 60,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "WMT",
+      "anchor": "2015-05-12",
+      "horizon_days": 365,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "WMT",
+      "anchor": "2015-05-12",
+      "horizon_days": 1095,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "WMT",
+      "anchor": "2020-05-12",
+      "horizon_days": 60,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "WMT",
+      "anchor": "2020-05-12",
+      "horizon_days": 365,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "WMT",
+      "anchor": "2020-05-12",
+      "horizon_days": 1095,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "WMT",
+      "anchor": "2025-05-12",
+      "horizon_days": 60,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "WMT",
+      "anchor": "2025-05-12",
+      "horizon_days": 365,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "WMT",
+      "anchor": "2025-05-12",
+      "horizon_days": 1095,
+      "ok": false,
+      "detail": "forward end date after run_date (2026-05-13); label not yet observable"
+    },
+    {
+      "ticker": "CAT",
+      "anchor": "2015-05-12",
+      "horizon_days": 60,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "CAT",
+      "anchor": "2015-05-12",
+      "horizon_days": 365,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "CAT",
+      "anchor": "2015-05-12",
+      "horizon_days": 1095,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "CAT",
+      "anchor": "2020-05-12",
+      "horizon_days": 60,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "CAT",
+      "anchor": "2020-05-12",
+      "horizon_days": 365,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "CAT",
+      "anchor": "2020-05-12",
+      "horizon_days": 1095,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "CAT",
+      "anchor": "2025-05-12",
+      "horizon_days": 60,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "CAT",
+      "anchor": "2025-05-12",
+      "horizon_days": 365,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "CAT",
+      "anchor": "2025-05-12",
+      "horizon_days": 1095,
+      "ok": false,
+      "detail": "forward end date after run_date (2026-05-13); label not yet observable"
+    },
+    {
+      "ticker": "META",
+      "anchor": "2015-05-12",
+      "horizon_days": 60,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "META",
+      "anchor": "2015-05-12",
+      "horizon_days": 365,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "META",
+      "anchor": "2015-05-12",
+      "horizon_days": 1095,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "META",
+      "anchor": "2020-05-12",
+      "horizon_days": 60,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "META",
+      "anchor": "2020-05-12",
+      "horizon_days": 365,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "META",
+      "anchor": "2020-05-12",
+      "horizon_days": 1095,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "META",
+      "anchor": "2025-05-12",
+      "horizon_days": 60,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "META",
+      "anchor": "2025-05-12",
+      "horizon_days": 365,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "META",
+      "anchor": "2025-05-12",
+      "horizon_days": 1095,
+      "ok": false,
+      "detail": "forward end date after run_date (2026-05-13); label not yet observable"
+    }
+  ]
+}

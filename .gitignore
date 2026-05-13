@@ -220,5 +220,10 @@ __marimo__/
 
 /reports/*
 
+# Pipeline eval scratch (committed deliverables live elsewhere in eval_out/)
+eval_out/*.bak.*
+eval_out/*.log
+eval_out/memory/
+
 # macOS
 .DS_Store

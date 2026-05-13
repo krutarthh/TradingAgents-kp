@@ -1,0 +1,36 @@
+{
+  "run_id": "b927887776d1",
+  "universe_file": "/Users/krutarthpatel/Desktop/dev/TradingAgents/tradingagents/evaluation/universe_lt_eval.json",
+  "llm_provider": "ollama",
+  "quick_think_llm": "gemma4:31b-cloud",
+  "deep_think_llm": "gemma4:31b-cloud",
+  "backend_url": null,
+  "benchmark_ticker": "SPY",
+  "horizons_calendar_days": [
+    60,
+    365,
+    1095
+  ],
+  "anchors": [
+    "2015-05-12",
+    "2020-05-12",
+    "2025-05-12"
+  ],
+  "tickers": [
+    "NVDA",
+    "TSM",
+    "AAPL",
+    "MSFT",
+    "JPM",
+    "XOM",
+    "UNH",
+    "WMT",
+    "CAT",
+    "META"
+  ],
+  "observable_through": "2026-05-13",
+  "eval_workers": 2,
+  "research_depth": "shallow",
+  "max_debate_rounds": 1,
+  "max_risk_discuss_rounds": 1
+}

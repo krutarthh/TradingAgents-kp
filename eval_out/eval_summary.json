@@ -1,0 +1,22 @@
+{
+  "anchors": {
+    "2015-05-12": {
+      "n_rows": 10,
+      "n_ok_runs": 10,
+      "bullish_count": 6,
+      "bullish_alpha365_positive_count": 3
+    },
+    "2020-05-12": {
+      "n_rows": 10,
+      "n_ok_runs": 10,
+      "bullish_count": 8,
+      "bullish_alpha365_positive_count": 5
+    },
+    "2025-05-12": {
+      "n_rows": 10,
+      "n_ok_runs": 10,
+      "bullish_count": 9,
+      "bullish_alpha365_positive_count": 5
+    }
+  }
+}
