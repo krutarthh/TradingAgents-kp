@@ -224,6 +224,9 @@ __marimo__/
 eval_out/*.bak.*
 eval_out/*.log
 eval_out/memory/
+eval_out_crisis/*.bak.*
+eval_out_crisis/*.log
+eval_out_crisis/memory/
 
 # macOS
 .DS_Store

@@ -1,0 +1,37 @@
+{
+  "run_id": "e9fb4e1b4acd",
+  "universe_file": "tradingagents/evaluation/universe_crisis_acute_2000_2008.json",
+  "llm_provider": "ollama",
+  "quick_think_llm": "gemma4:31b-cloud",
+  "deep_think_llm": "gemma4:31b-cloud",
+  "backend_url": null,
+  "benchmark_ticker": "SPY",
+  "horizons_calendar_days": [
+    60,
+    365,
+    1095
+  ],
+  "anchors": [
+    "2000-09-15",
+    "2008-09-15"
+  ],
+  "tickers": [
+    "NVDA",
+    "TSM",
+    "AAPL",
+    "MSFT",
+    "JPM",
+    "XOM",
+    "UNH",
+    "WMT",
+    "CAT",
+    "CSCO",
+    "LEN",
+    "BAC"
+  ],
+  "observable_through": "2026-05-14",
+  "eval_workers": 3,
+  "research_depth": "shallow",
+  "max_debate_rounds": 1,
+  "max_risk_discuss_rounds": 1
+}

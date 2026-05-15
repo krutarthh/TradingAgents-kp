@@ -1,0 +1,511 @@
+{
+  "total_checks": 72,
+  "ok": 72,
+  "fail": 0,
+  "rows": [
+    {
+      "ticker": "NVDA",
+      "anchor": "2000-09-15",
+      "horizon_days": 60,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "NVDA",
+      "anchor": "2000-09-15",
+      "horizon_days": 365,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "NVDA",
+      "anchor": "2000-09-15",
+      "horizon_days": 1095,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "NVDA",
+      "anchor": "2008-09-15",
+      "horizon_days": 60,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "NVDA",
+      "anchor": "2008-09-15",
+      "horizon_days": 365,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "NVDA",
+      "anchor": "2008-09-15",
+      "horizon_days": 1095,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "TSM",
+      "anchor": "2000-09-15",
+      "horizon_days": 60,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "TSM",
+      "anchor": "2000-09-15",
+      "horizon_days": 365,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "TSM",
+      "anchor": "2000-09-15",
+      "horizon_days": 1095,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "TSM",
+      "anchor": "2008-09-15",
+      "horizon_days": 60,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "TSM",
+      "anchor": "2008-09-15",
+      "horizon_days": 365,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "TSM",
+      "anchor": "2008-09-15",
+      "horizon_days": 1095,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "AAPL",
+      "anchor": "2000-09-15",
+      "horizon_days": 60,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "AAPL",
+      "anchor": "2000-09-15",
+      "horizon_days": 365,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "AAPL",
+      "anchor": "2000-09-15",
+      "horizon_days": 1095,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "AAPL",
+      "anchor": "2008-09-15",
+      "horizon_days": 60,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "AAPL",
+      "anchor": "2008-09-15",
+      "horizon_days": 365,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "AAPL",
+      "anchor": "2008-09-15",
+      "horizon_days": 1095,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "MSFT",
+      "anchor": "2000-09-15",
+      "horizon_days": 60,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "MSFT",
+      "anchor": "2000-09-15",
+      "horizon_days": 365,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "MSFT",
+      "anchor": "2000-09-15",
+      "horizon_days": 1095,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "MSFT",
+      "anchor": "2008-09-15",
+      "horizon_days": 60,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "MSFT",
+      "anchor": "2008-09-15",
+      "horizon_days": 365,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "MSFT",
+      "anchor": "2008-09-15",
+      "horizon_days": 1095,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "JPM",
+      "anchor": "2000-09-15",
+      "horizon_days": 60,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "JPM",
+      "anchor": "2000-09-15",
+      "horizon_days": 365,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "JPM",
+      "anchor": "2000-09-15",
+      "horizon_days": 1095,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "JPM",
+      "anchor": "2008-09-15",
+      "horizon_days": 60,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "JPM",
+      "anchor": "2008-09-15",
+      "horizon_days": 365,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "JPM",
+      "anchor": "2008-09-15",
+      "horizon_days": 1095,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "XOM",
+      "anchor": "2000-09-15",
+      "horizon_days": 60,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "XOM",
+      "anchor": "2000-09-15",
+      "horizon_days": 365,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "XOM",
+      "anchor": "2000-09-15",
+      "horizon_days": 1095,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "XOM",
+      "anchor": "2008-09-15",
+      "horizon_days": 60,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "XOM",
+      "anchor": "2008-09-15",
+      "horizon_days": 365,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "XOM",
+      "anchor": "2008-09-15",
+      "horizon_days": 1095,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "UNH",
+      "anchor": "2000-09-15",
+      "horizon_days": 60,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "UNH",
+      "anchor": "2000-09-15",
+      "horizon_days": 365,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "UNH",
+      "anchor": "2000-09-15",
+      "horizon_days": 1095,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "UNH",
+      "anchor": "2008-09-15",
+      "horizon_days": 60,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "UNH",
+      "anchor": "2008-09-15",
+      "horizon_days": 365,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "UNH",
+      "anchor": "2008-09-15",
+      "horizon_days": 1095,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "WMT",
+      "anchor": "2000-09-15",
+      "horizon_days": 60,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "WMT",
+      "anchor": "2000-09-15",
+      "horizon_days": 365,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "WMT",
+      "anchor": "2000-09-15",
+      "horizon_days": 1095,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "WMT",
+      "anchor": "2008-09-15",
+      "horizon_days": 60,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "WMT",
+      "anchor": "2008-09-15",
+      "horizon_days": 365,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "WMT",
+      "anchor": "2008-09-15",
+      "horizon_days": 1095,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "CAT",
+      "anchor": "2000-09-15",
+      "horizon_days": 60,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "CAT",
+      "anchor": "2000-09-15",
+      "horizon_days": 365,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "CAT",
+      "anchor": "2000-09-15",
+      "horizon_days": 1095,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "CAT",
+      "anchor": "2008-09-15",
+      "horizon_days": 60,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "CAT",
+      "anchor": "2008-09-15",
+      "horizon_days": 365,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "CAT",
+      "anchor": "2008-09-15",
+      "horizon_days": 1095,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "CSCO",
+      "anchor": "2000-09-15",
+      "horizon_days": 60,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "CSCO",
+      "anchor": "2000-09-15",
+      "horizon_days": 365,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "CSCO",
+      "anchor": "2000-09-15",
+      "horizon_days": 1095,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "CSCO",
+      "anchor": "2008-09-15",
+      "horizon_days": 60,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "CSCO",
+      "anchor": "2008-09-15",
+      "horizon_days": 365,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "CSCO",
+      "anchor": "2008-09-15",
+      "horizon_days": 1095,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "LEN",
+      "anchor": "2000-09-15",
+      "horizon_days": 60,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "LEN",
+      "anchor": "2000-09-15",
+      "horizon_days": 365,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "LEN",
+      "anchor": "2000-09-15",
+      "horizon_days": 1095,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "LEN",
+      "anchor": "2008-09-15",
+      "horizon_days": 60,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "LEN",
+      "anchor": "2008-09-15",
+      "horizon_days": 365,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "LEN",
+      "anchor": "2008-09-15",
+      "horizon_days": 1095,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "BAC",
+      "anchor": "2000-09-15",
+      "horizon_days": 60,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "BAC",
+      "anchor": "2000-09-15",
+      "horizon_days": 365,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "BAC",
+      "anchor": "2000-09-15",
+      "horizon_days": 1095,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "BAC",
+      "anchor": "2008-09-15",
+      "horizon_days": 60,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "BAC",
+      "anchor": "2008-09-15",
+      "horizon_days": 365,
+      "ok": true,
+      "detail": "ok"
+    },
+    {
+      "ticker": "BAC",
+      "anchor": "2008-09-15",
+      "horizon_days": 1095,
+      "ok": true,
+      "detail": "ok"
+    }
+  ]
+}

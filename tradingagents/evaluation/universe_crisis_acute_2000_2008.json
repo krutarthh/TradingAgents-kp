@@ -1,0 +1,20 @@
+{
+  "description": "Acute stress pipeline eval: dot-com post-peak (2000-09-15) and Lehman week (2008-09-15). Pilot universe minus META (not listed pre-2012) plus CSCO (bust-tech), LEN (homebuilder), BAC (large-bank stress). Benchmark SPY.",
+  "anchors": ["2000-09-15", "2008-09-15"],
+  "horizons_calendar_days": [60, 365, 1095],
+  "benchmark_ticker": "SPY",
+  "tickers": [
+    "NVDA",
+    "TSM",
+    "AAPL",
+    "MSFT",
+    "JPM",
+    "XOM",
+    "UNH",
+    "WMT",
+    "CAT",
+    "CSCO",
+    "LEN",
+    "BAC"
+  ]
+}

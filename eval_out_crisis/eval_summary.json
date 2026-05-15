@@ -1,0 +1,16 @@
+{
+  "anchors": {
+    "2000-09-15": {
+      "n_rows": 12,
+      "n_ok_runs": 12,
+      "bullish_count": 7,
+      "bullish_alpha365_positive_count": 6
+    },
+    "2008-09-15": {
+      "n_rows": 12,
+      "n_ok_runs": 7,
+      "bullish_count": 4,
+      "bullish_alpha365_positive_count": 4
+    }
+  }
+}
