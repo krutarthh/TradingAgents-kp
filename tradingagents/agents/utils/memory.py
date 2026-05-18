@@ -95,9 +95,27 @@ class TradingMemoryLog:
         """Return entries with outcome:pending (for Phase B)."""
         return [e for e in self.load_entries() if e.get("pending")]
 
-    def get_past_context(self, ticker: str, n_same: int = 5, n_cross: int = 3) -> str:
+    def get_past_context(
+        self,
+        ticker: str,
+        n_same: int = 5,
+        n_cross: int = 3,
+        as_of: Optional[str] = None,
+    ) -> str:
         """Return formatted past context string for agent prompt injection."""
         entries = [e for e in self.load_entries() if not e.get("pending")]
+        if as_of:
+            try:
+                from tradingagents.dataflows.temporal import parse_cutoff
+
+                cut = parse_cutoff(as_of)
+                entries = [
+                    e
+                    for e in entries
+                    if e.get("date") and parse_cutoff(str(e["date"])[:10]) <= cut
+                ]
+            except ValueError:
+                pass
         if not entries:
             return ""
 

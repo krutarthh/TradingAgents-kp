@@ -8,6 +8,7 @@ from stockstats import wrap
 from typing import Annotated
 import os
 from .config import get_config
+from .temporal import is_strict_temporal, pit_cache_key
 
 logger = logging.getLogger(__name__)
 
@@ -54,16 +55,20 @@ def load_ohlcv(symbol: str, curr_date: str) -> pd.DataFrame:
     config = get_config()
     curr_date_dt = pd.to_datetime(curr_date)
 
-    # Cache uses a fixed window (15y to today) so one file per symbol
-    today_date = pd.Timestamp.today()
-    start_date = today_date - pd.DateOffset(years=5)
+    cutoff_str = curr_date_dt.strftime("%Y-%m-%d")
+    if is_strict_temporal():
+        end_date = curr_date_dt + pd.Timedelta(days=1)
+        start_date = curr_date_dt - pd.DateOffset(years=5)
+    else:
+        end_date = pd.Timestamp.today()
+        start_date = end_date - pd.DateOffset(years=5)
     start_str = start_date.strftime("%Y-%m-%d")
-    end_str = today_date.strftime("%Y-%m-%d")
+    end_str = end_date.strftime("%Y-%m-%d")
 
     os.makedirs(config["data_cache_dir"], exist_ok=True)
     data_file = os.path.join(
         config["data_cache_dir"],
-        f"{symbol}-YFin-data-{start_str}-{end_str}.csv",
+        pit_cache_key(f"{symbol}-YFin-data", start_str, end_str, f"cutoff-{cutoff_str}") + ".csv",
     )
 
     if os.path.exists(data_file):

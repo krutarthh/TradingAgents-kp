@@ -8,9 +8,10 @@ from tradingagents.dataflows.interface import route_to_vendor
 @tool
 def get_analyst_estimates(
     ticker: Annotated[str, "Ticker symbol"],
+    curr_date: Annotated[str, "Current date in yyyy-mm-dd format"],
 ) -> str:
     """Retrieve analyst targets, recommendation trends, and earnings/revenue estimates."""
-    return route_to_vendor("get_analyst_estimates", ticker)
+    return route_to_vendor("get_analyst_estimates", ticker, curr_date)
 
 
 @tool

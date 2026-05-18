@@ -103,6 +103,7 @@ def _merge_eval_config(
     cfg["max_risk_discuss_rounds"] = 1
     cfg["results_dir"] = str(out_dir / "ta_results")
     cfg["memory_log_path"] = str(out_dir / "memory" / f"batch_{run_id}.md")
+    cfg["eval_strict_temporal"] = True
     return cfg
 
 
@@ -212,6 +213,7 @@ def main() -> int:
                 "research_depth": "shallow",
                 "max_debate_rounds": 1,
                 "max_risk_discuss_rounds": 1,
+                "eval_strict_temporal": True,
             },
             indent=2,
         ),

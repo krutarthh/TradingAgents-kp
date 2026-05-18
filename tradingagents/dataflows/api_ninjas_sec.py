@@ -13,6 +13,7 @@ import requests
 
 from tradingagents.dataflows.api_file_cache import cache_get_json, cache_set_json
 from tradingagents.dataflows.config import DataVendorSkipped
+from tradingagents.dataflows.temporal import filter_rows_on_or_before
 
 SEC_ENDPOINT = "https://api.api-ninjas.com/v1/sec"
 
@@ -62,6 +63,7 @@ def get_sec_filing_highlights_ninjas(ticker: str, curr_date: str, filing: str = 
         payload = cached
 
     rows = payload.get("results") or []
+    rows = filter_rows_on_or_before(rows, curr_date, date_field="filing_date")
     source_note = "cached" if cached is not None else "live API"
     lines = [
         f"# SEC Filing Highlights ({filing}) for {ticker.upper()}",
@@ -70,7 +72,7 @@ def get_sec_filing_highlights_ninjas(ticker: str, curr_date: str, filing: str = 
         "",
     ]
     if not rows:
-        lines.append("No filings returned for this ticker/form combination.")
+        lines.append("No filings on or before trade date for this ticker/form combination.")
         return "\n".join(lines)
 
     rows_sorted = sorted(rows, key=lambda r: str(r.get("filing_date", "")), reverse=True)
@@ -166,12 +168,12 @@ def _download_sec_filing_text(url: str) -> str:
 
 def get_sec_filing_sections_ninjas(ticker: str, curr_date: str) -> str:
     """Fetch latest 10-K URL via API Ninjas, then extract key filing sections from SEC HTML."""
-    rows = _fetch_sec_filings(ticker, "10-K")
+    rows = filter_rows_on_or_before(_fetch_sec_filings(ticker, "10-K"), curr_date, date_field="filing_date")
     if not rows:
         return (
             f"# SEC Filing Sections (10-K) for {ticker.upper()}\n"
             f"As of trade date: {curr_date}\n"
-            "No 10-K filing rows returned by API Ninjas."
+            "No 10-K filing rows on or before trade date returned by API Ninjas."
         )
     rows_sorted = sorted(rows, key=lambda r: str(r.get("filing_date", "")), reverse=True)
     latest = rows_sorted[0]

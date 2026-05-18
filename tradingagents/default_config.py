@@ -75,6 +75,9 @@ DEFAULT_CONFIG = {
     "enable_filing_transcript_tools": True,
     "eval_holding_days": 60,
     "eval_benchmark_ticker": "SPY",
+    # Historical eval: enforce point-in-time data (no live yfinance .info, FRED end dates, etc.)
+    "eval_strict_temporal": False,
+    "eval_cutoff_date": None,
     # Preferred analyst order: list "forward" last so consensus/macro are freshest before integration
     "recommended_analyst_order": ["market", "social", "news", "fundamentals", "forward"],
     # LangSmith: None = only env vars (LANGCHAIN_TRACING_V2); True/False forces on/off

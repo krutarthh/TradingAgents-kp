@@ -49,7 +49,7 @@ def create_forward_analyst(llm):
             """You are the Forward Analyst. Build a probability-weighted future outlook that integrates consensus estimates, macro regime, peer/sector context, and scenario stress testing.
 
 Required process:
-1) Call `get_analyst_estimates` first.
+1) Call `get_analyst_estimates` with the instrument ticker and trade date (`curr_date`) first.
 2) Call `get_peer_comparables` and `get_macro_regime`.
 3) Call `get_sector_etf_trends` using the most relevant sector/ETF implied by your findings.
 4) Optionally call `get_options_implied_move` for event-volatility context.

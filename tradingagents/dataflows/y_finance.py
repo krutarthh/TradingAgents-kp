@@ -5,6 +5,7 @@ import pandas as pd
 import yfinance as yf
 import os
 from .stockstats_utils import StockstatsUtils, _clean_dataframe, yf_retry, load_ohlcv, filter_financials_by_date
+from .temporal import data_as_of_header, is_strict_temporal, parse_cutoff
 
 def get_YFin_data_online(
     symbol: Annotated[str, "ticker symbol of the company"],
@@ -43,7 +44,7 @@ def get_YFin_data_online(
     # Add header information
     header = f"# Stock data for {symbol.upper()} from {start_date} to {end_date}\n"
     header += f"# Total records: {len(data)}\n"
-    header += f"# Data retrieved on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
+    header += data_as_of_header(end_date)
 
     return header + csv_string
 
@@ -251,7 +252,45 @@ def get_fundamentals(
 ):
     """Get company fundamentals overview from yfinance."""
     try:
-        ticker_obj = yf.Ticker(ticker.upper())
+        symbol = ticker.upper()
+        if is_strict_temporal() and curr_date:
+            ticker_obj = yf.Ticker(symbol)
+            income = filter_financials_by_date(
+                yf_retry(lambda: ticker_obj.quarterly_income_stmt), curr_date
+            )
+            balance = filter_financials_by_date(
+                yf_retry(lambda: ticker_obj.quarterly_balance_sheet), curr_date
+            )
+            ohlcv = load_ohlcv(symbol, curr_date)
+            spot = float(ohlcv["Close"].iloc[-1]) if not ohlcv.empty else None
+
+            lines = [
+                f"# Company Fundamentals for {symbol}",
+                data_as_of_header(curr_date).strip(),
+                "",
+                "## Note",
+                "Strict historical mode: point-in-time quarterly statements and last close on cutoff.",
+                f"Close on or before {curr_date}: {spot if spot is not None else 'N/A'}",
+                "",
+            ]
+            if income is not None and not income.empty:
+                latest_col = income.columns[-1]
+                lines.append(f"## Latest quarterly income (period end {latest_col})")
+                for idx in income.index[:12]:
+                    val = income.loc[idx, latest_col]
+                    if pd.notna(val):
+                        lines.append(f"- {idx}: {val}")
+                lines.append("")
+            if balance is not None and not balance.empty:
+                latest_col = balance.columns[-1]
+                lines.append(f"## Latest quarterly balance sheet (period end {latest_col})")
+                for idx in balance.index[:12]:
+                    val = balance.loc[idx, latest_col]
+                    if pd.notna(val):
+                        lines.append(f"- {idx}: {val}")
+            return "\n".join(lines)
+
+        ticker_obj = yf.Ticker(symbol)
         info = yf_retry(lambda: ticker_obj.info)
 
         if not info:
@@ -293,8 +332,9 @@ def get_fundamentals(
             if value is not None:
                 lines.append(f"{label}: {value}")
 
-        header = f"# Company Fundamentals for {ticker.upper()}\n"
-        header += f"# Data retrieved on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
+        as_of = curr_date or datetime.now().strftime("%Y-%m-%d")
+        header = f"# Company Fundamentals for {symbol}\n"
+        header += data_as_of_header(as_of)
 
         return header + "\n".join(lines)
 
@@ -326,10 +366,10 @@ def get_balance_sheet(
         
         # Add header information
         header = f"# Balance Sheet data for {ticker.upper()} ({freq})\n"
-        header += f"# Data retrieved on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
-        
+        header += data_as_of_header(curr_date or "")
+
         return header + csv_string
-        
+
     except Exception as e:
         return f"Error retrieving balance sheet for {ticker}: {str(e)}"
 
@@ -358,10 +398,10 @@ def get_cashflow(
         
         # Add header information
         header = f"# Cash Flow data for {ticker.upper()} ({freq})\n"
-        header += f"# Data retrieved on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
-        
+        header += data_as_of_header(curr_date or "")
+
         return header + csv_string
-        
+
     except Exception as e:
         return f"Error retrieving cash flow for {ticker}: {str(e)}"
 
@@ -390,33 +430,46 @@ def get_income_statement(
         
         # Add header information
         header = f"# Income Statement data for {ticker.upper()} ({freq})\n"
-        header += f"# Data retrieved on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
-        
+        header += data_as_of_header(curr_date or "")
+
         return header + csv_string
-        
+
     except Exception as e:
         return f"Error retrieving income statement for {ticker}: {str(e)}"
 
 
 def get_insider_transactions(
-    ticker: Annotated[str, "ticker symbol of the company"]
+    ticker: Annotated[str, "ticker symbol of the company"],
+    curr_date: Annotated[str, "current date in YYYY-MM-DD format"] = None,
 ):
     """Get insider transactions data from yfinance."""
     try:
         ticker_obj = yf.Ticker(ticker.upper())
         data = yf_retry(lambda: ticker_obj.insider_transactions)
-        
+
         if data is None or data.empty:
             return f"No insider transactions data found for symbol '{ticker}'"
-            
-        # Convert to CSV string for consistency with other functions
+
+        if curr_date and is_strict_temporal():
+            cut = parse_cutoff(curr_date)
+            date_col = None
+            for col in ("Start Date", "Date", "Transaction Date"):
+                if col in data.columns:
+                    date_col = col
+                    break
+            if date_col:
+                dates = pd.to_datetime(data[date_col], errors="coerce")
+                data = data.loc[dates.dt.date <= cut]
+
+        if data.empty:
+            return f"No insider transactions on or before {curr_date} for symbol '{ticker}'"
+
         csv_string = data.to_csv()
-        
-        # Add header information
+
         header = f"# Insider Transactions data for {ticker.upper()}\n"
-        header += f"# Data retrieved on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
-        
+        header += data_as_of_header(curr_date or "")
+
         return header + csv_string
-        
+
     except Exception as e:
         return f"Error retrieving insider transactions for {ticker}: {str(e)}"

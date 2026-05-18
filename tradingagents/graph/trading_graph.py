@@ -348,7 +348,8 @@ class TradingAgentsGraph:
     def _run_graph(self, company_name, trade_date):
         """Execute the graph and write the resulting state to disk and memory log."""
         # Initialize state — inject memory log context for PM.
-        past_context = self.memory_log.get_past_context(company_name)
+        as_of = str(trade_date)
+        past_context = self.memory_log.get_past_context(company_name, as_of=as_of)
         init_agent_state = self.propagator.create_initial_state(
             company_name, trade_date, past_context=past_context
         )

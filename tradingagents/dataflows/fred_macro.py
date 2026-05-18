@@ -10,6 +10,10 @@ from typing import Any, Dict, List, Optional
 import requests
 
 from tradingagents.dataflows.api_file_cache import cache_get_json, cache_set_json
+from tradingagents.dataflows.temporal import (
+    filter_observations_on_or_before,
+    latest_observation_on_or_before,
+)
 from .config import DataVendorSkipped
 
 
@@ -35,6 +39,7 @@ def _observations_for_series(
     series_id: str,
     api_key: str,
     observation_start: str,
+    observation_end: Optional[str] = None,
     limit: int = 24,
 ) -> List[Dict[str, Any]]:
     params = {
@@ -45,6 +50,8 @@ def _observations_for_series(
         "sort_order": "desc",
         "limit": limit,
     }
+    if observation_end:
+        params["observation_end"] = observation_end
     r = requests.get(FRED_OBS_URL, params=params, timeout=45)
     r.raise_for_status()
     data = r.json()
@@ -79,7 +86,9 @@ def get_macro_regime_fred(curr_date: str) -> str:
     # Sequential requests; FRED free tier is generous. Small pause avoids burst throttling.
     for sid in MACRO_SERIES:
         try:
-            bundle["series"][sid] = _observations_for_series(sid, key, start, limit=30)
+            bundle["series"][sid] = _observations_for_series(
+                sid, key, start, observation_end=curr_date, limit=30
+            )
             time.sleep(0.15)
         except requests.RequestException as exc:
             bundle["series"][sid] = {"error": str(exc)}
@@ -88,11 +97,13 @@ def get_macro_regime_fred(curr_date: str) -> str:
     return _render_fred_macro(curr_date, bundle, source_note="(live FRED API)")
 
 
-def _latest_value(obs: Any) -> tuple[str, str]:
+def _latest_value(obs: Any, cutoff: Optional[str] = None) -> tuple[str, str]:
     if isinstance(obs, dict) and "error" in obs:
         return "N/A", str(obs["error"])
     if not isinstance(obs, list) or not obs:
         return "N/A", "no observations"
+    if cutoff:
+        return latest_observation_on_or_before(obs, cutoff)
     for row in obs:
         val = row.get("value", ".")
         if val in (".", ""):
@@ -101,24 +112,23 @@ def _latest_value(obs: Any) -> tuple[str, str]:
     return "N/A", "no numeric observations"
 
 
-def _pct_change_from_obs(obs: Any, months_back: int = 1) -> Optional[float]:
+def _pct_change_from_obs(obs: Any, cutoff: str, months_back: int = 1) -> Optional[float]:
     """Approximate change using observation roughly `months_back` months earlier."""
-    if not isinstance(obs, list) or len(obs) < 2:
+    eligible = filter_observations_on_or_before(obs, cutoff) if cutoff else obs
+    if not isinstance(eligible, list) or len(eligible) < 2:
         return None
     try:
         latest = None
-        for row in obs:
+        for row in eligible:
             v = row.get("value", ".")
             if v not in (".", ""):
                 latest = float(v)
-                latest_date = row.get("date")
                 break
         if latest is None:
             return None
-        # Walk observations to find one at least ~20 business days older
-        anchor_idx = min(len(obs) - 1, max(20, months_back * 21))
+        anchor_idx = min(len(eligible) - 1, max(20, months_back * 21))
         past = None
-        for row in obs[anchor_idx:]:
+        for row in eligible[anchor_idx:]:
             v = row.get("value", ".")
             if v not in (".", ""):
                 past = float(v)
@@ -139,20 +149,20 @@ def _render_fred_macro(curr_date: str, bundle: Dict[str, Any], source_note: str)
     ]
     for sid, title in MACRO_SERIES.items():
         obs = series_block.get(sid)
-        val, d = _latest_value(obs)
+        val, d = _latest_value(obs, cutoff=curr_date)
         lines.append(f"- **{sid}** ({title}): {val} (obs date: {d})")
 
     lines.extend(["", "## Approximate recent change (vs ~1 month earlier in series)"])
     for sid in ("VIXCLS", "DGS10", "DTWEXBGS", "UNRATE", "NFCI"):
         obs = series_block.get(sid)
-        ch = _pct_change_from_obs(obs, months_back=1)
+        ch = _pct_change_from_obs(obs, curr_date, months_back=1)
         if ch is None:
             lines.append(f"- {sid}: N/A")
         else:
             lines.append(f"- {sid}: {ch * 100:+.2f}% (approx)")
 
     vix_obs = series_block.get("VIXCLS")
-    vix_val, _ = _latest_value(vix_obs)
+    vix_val, _ = _latest_value(vix_obs, cutoff=curr_date)
     tags = []
     try:
         vix_f = float(vix_val) if vix_val not in ("N/A", "") else None
@@ -161,7 +171,7 @@ def _render_fred_macro(curr_date: str, bundle: Dict[str, Any], source_note: str)
     except ValueError:
         pass
     t10y2y_obs = series_block.get("T10Y2Y")
-    ty_val, _ = _latest_value(t10y2y_obs)
+    ty_val, _ = _latest_value(t10y2y_obs, cutoff=curr_date)
     try:
         ty_f = float(ty_val) if ty_val not in ("N/A", "") else None
         if ty_f is not None:

@@ -9,6 +9,13 @@ import pandas as pd
 import yfinance as yf
 
 from .stockstats_utils import yf_retry
+from .temporal import (
+    data_as_of_header,
+    is_strict_temporal,
+    skip_live_only_message,
+    strict_peers_for_sector,
+    strict_sector_for_ticker,
+)
 
 
 SECTOR_ETF_MAP: Dict[str, str] = {
@@ -75,16 +82,57 @@ def _safe_df_to_csv(df: Optional[pd.DataFrame], title: str) -> str:
     return f"## {title}\n{df.head(12).to_csv(index=True)}\n"
 
 
-def get_analyst_estimates_yfinance(ticker: str) -> str:
-    """Fetch forward-looking analyst and estimate datasets for a ticker."""
+def _filter_df_index_on_or_before(df: Optional[pd.DataFrame], cutoff: str) -> Optional[pd.DataFrame]:
+    if df is None or df.empty:
+        return df
+    cut = pd.Timestamp(cutoff)
+    if isinstance(df.index, pd.DatetimeIndex):
+        return df.loc[df.index <= cut]
+    try:
+        idx = pd.to_datetime(df.index, errors="coerce")
+        return df.loc[idx <= cut]
+    except Exception:
+        return df
+
+
+def get_analyst_estimates_yfinance(ticker: str, curr_date: Optional[str] = None) -> str:
+    """Fetch analyst estimates; strict mode uses only history on or before curr_date."""
     try:
         symbol = ticker.upper()
+        cutoff = curr_date
+
+        if is_strict_temporal():
+            if not cutoff:
+                return skip_live_only_message(
+                    "Analyst estimates",
+                    "unknown",
+                    "curr_date required in strict temporal mode",
+                )
+            tk = yf.Ticker(symbol)
+            rec = _filter_df_index_on_or_before(yf_retry(lambda: tk.recommendations), cutoff)
+            earn_hist = _filter_df_index_on_or_before(yf_retry(lambda: tk.earnings_history), cutoff)
+            blocks = [
+                f"# Analyst and Forward Estimates for {symbol}",
+                data_as_of_header(cutoff).strip(),
+                "",
+                "## Note",
+                "Strict historical mode: live consensus snapshot (target price, forward PE) omitted.",
+                "",
+                _safe_df_to_csv(rec, "Recommendations History (on or before cutoff)"),
+                _safe_df_to_csv(earn_hist, "Earnings History (on or before cutoff)"),
+            ]
+            if (rec is None or rec.empty) and (earn_hist is None or earn_hist.empty):
+                blocks.append(
+                    "No recommendation or earnings history rows on or before trade date."
+                )
+            return "\n".join(blocks)
+
         tk = yf.Ticker(symbol)
         info = yf_retry(lambda: tk.info) or {}
-
+        as_of = cutoff or datetime.now().strftime("%Y-%m-%d")
         blocks = [
             f"# Analyst and Forward Estimates for {symbol}",
-            f"# Data retrieved on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+            data_as_of_header(as_of).strip(),
             "",
             "## Snapshot",
             f"Current price: {info.get('currentPrice', 'N/A')}",
@@ -112,14 +160,20 @@ def get_peer_comparables_yfinance(ticker: str, curr_date: str) -> str:
     try:
         symbol = ticker.upper()
         as_of = _to_datetime(curr_date)
-        tk = yf.Ticker(symbol)
-        info = yf_retry(lambda: tk.info) or {}
-        sector = (info.get("sector") or "").strip()
-        sector_key = sector.lower()
+
+        if is_strict_temporal():
+            sector_key = strict_sector_for_ticker(symbol)
+            sector = sector_key.title()
+            peers = strict_peers_for_sector(sector_key, symbol)
+        else:
+            tk = yf.Ticker(symbol)
+            info = yf_retry(lambda: tk.info) or {}
+            sector = (info.get("sector") or "").strip()
+            sector_key = sector.lower()
+            peer_candidates = SECTOR_PEERS.get(sector_key, ["AAPL", "MSFT", "GOOGL", "AMZN", "META"])
+            peers = [p for p in peer_candidates if p != symbol][:5]
 
         etf = SECTOR_ETF_MAP.get(sector_key, "SPY")
-        peer_candidates = SECTOR_PEERS.get(sector_key, ["AAPL", "MSFT", "GOOGL", "AMZN", "META"])
-        peers = [p for p in peer_candidates if p != symbol][:5]
 
         target_1m = _history_return(symbol, as_of, 1)
         target_3m = _history_return(symbol, as_of, 3)
@@ -127,23 +181,20 @@ def get_peer_comparables_yfinance(ticker: str, curr_date: str) -> str:
         spy_12m = _history_return("SPY", as_of, 12)
         etf_12m = _history_return(etf, as_of, 12)
 
-        rows: List[Tuple[str, Optional[float], Optional[float], Optional[float], Optional[int]]] = []
+        rows: List[Tuple[str, Optional[float], Optional[float], Optional[float]]] = []
         for peer in peers:
-            peer_tk = yf.Ticker(peer)
-            peer_info = yf_retry(lambda p=peer_tk: p.info) or {}
             rows.append(
                 (
                     peer,
                     _history_return(peer, as_of, 1),
                     _history_return(peer, as_of, 3),
                     _history_return(peer, as_of, 12),
-                    peer_info.get("marketCap"),
                 )
             )
 
         lines = [
             f"# Peer Comparables for {symbol}",
-            f"# As of trade date: {curr_date}",
+            data_as_of_header(curr_date).strip(),
             f"Sector: {sector or 'Unknown'}",
             f"Mapped sector ETF: {etf}",
             "",
@@ -159,9 +210,9 @@ def get_peer_comparables_yfinance(ticker: str, curr_date: str) -> str:
             "## Peer Return Grid (1M/3M/12M)",
         ]
 
-        for peer, r1m, r3m, r12m, mcap in rows:
+        for peer, r1m, r3m, r12m in rows:
             lines.append(
-                f"- {peer}: 1M={_fmt_pct(r1m)}, 3M={_fmt_pct(r3m)}, 12M={_fmt_pct(r12m)}, market_cap={mcap if mcap is not None else 'N/A'}"
+                f"- {peer}: 1M={_fmt_pct(r1m)}, 3M={_fmt_pct(r3m)}, 12M={_fmt_pct(r12m)}"
             )
         return "\n".join(lines)
     except Exception as exc:
@@ -185,6 +236,10 @@ def get_macro_regime_yfinance(curr_date: str) -> str:
         changes: Dict[str, Optional[float]] = {}
         levels: Dict[str, Optional[float]] = {}
         for name, symbol in proxies.items():
+            if is_strict_temporal() and name in ("HYG", "LQD") and as_of.year < 2007:
+                changes[name] = None
+                levels[name] = None
+                continue
             ret_1m = _history_return(symbol, as_of, 1)
             changes[name] = ret_1m
             hist = yf_retry(
@@ -196,13 +251,13 @@ def get_macro_regime_yfinance(curr_date: str) -> str:
             levels[name] = float(hist["Close"].iloc[-1]) if hist is not None and not hist.empty else None
 
         hyg_lqd_spread_proxy = None
-        if changes["HYG"] is not None and changes["LQD"] is not None:
+        if changes.get("HYG") is not None and changes.get("LQD") is not None:
             hyg_lqd_spread_proxy = changes["HYG"] - changes["LQD"]
 
         regime_tags = []
-        if levels["VIX"] is not None:
+        if levels.get("VIX") is not None:
             regime_tags.append("high_vol" if levels["VIX"] > 22 else "calm_vol")
-        if changes["US10Y"] is not None:
+        if changes.get("US10Y") is not None:
             regime_tags.append("rates_up" if changes["US10Y"] > 0 else "rates_down")
         if hyg_lqd_spread_proxy is not None:
             regime_tags.append("credit_risk_on" if hyg_lqd_spread_proxy > 0 else "credit_defensive")
@@ -210,12 +265,13 @@ def get_macro_regime_yfinance(curr_date: str) -> str:
 
         lines = [
             f"# Macro Regime Snapshot as of {curr_date}",
+            data_as_of_header(curr_date).strip(),
             f"Regime label: {regime_label}",
             "",
             "## Proxy Levels and 1M Change",
         ]
         for name in ("VIX", "DXY", "US10Y", "WTI_OIL", "GOLD", "HYG", "LQD"):
-            lines.append(f"- {name}: level={levels[name] if levels[name] is not None else 'N/A'}, 1M_change={_fmt_pct(changes[name])}")
+            lines.append(f"- {name}: level={levels.get(name) if levels.get(name) is not None else 'N/A'}, 1M_change={_fmt_pct(changes.get(name))}")
         lines.append(
             f"- HYG-LQD 1M spread proxy: {_fmt_pct(hyg_lqd_spread_proxy)}"
         )
@@ -237,12 +293,16 @@ def get_macro_regime_yfinance_complement(curr_date: str) -> str:
         }
         lines = [
             f"# Complementary market proxies (yfinance) as of {curr_date}",
+            data_as_of_header(curr_date).strip(),
             "",
             "## Levels and ~1M change",
         ]
         hyg_ret: Optional[float] = None
         lqd_ret: Optional[float] = None
         for name, symbol in proxies.items():
+            if is_strict_temporal() and symbol in ("HYG", "LQD") and as_of.year < 2007:
+                lines.append(f"- {name} ({symbol}): level=N/A, 1M_change=N/A (ETF not listed before 2007)")
+                continue
             ret_1m = _history_return(symbol, as_of, 1)
             if symbol == "HYG":
                 hyg_ret = ret_1m
@@ -270,6 +330,8 @@ def get_sector_etf_trends_yfinance(sector_or_etf: str, curr_date: str) -> str:
         as_of = _to_datetime(curr_date)
         key = (sector_or_etf or "").strip()
         symbol = SECTOR_ETF_MAP.get(key.lower(), key.upper() if key else "SPY")
+        if is_strict_temporal() and symbol in ("XLRE", "XLC") and as_of.year < 2016:
+            symbol = "SPY"
 
         r1m = _history_return(symbol, as_of, 1)
         r3m = _history_return(symbol, as_of, 3)
@@ -288,8 +350,8 @@ def get_sector_etf_trends_yfinance(sector_or_etf: str, curr_date: str) -> str:
 
         lines = [
             f"# Sector ETF Trends for {sector_or_etf}",
+            data_as_of_header(curr_date).strip(),
             f"Resolved ETF symbol: {symbol}",
-            f"As of trade date: {curr_date}",
             f"1M return: {_fmt_pct(r1m)}",
             f"3M return: {_fmt_pct(r3m)}",
             f"12M return: {_fmt_pct(r12m)}",
@@ -303,6 +365,12 @@ def get_sector_etf_trends_yfinance(sector_or_etf: str, curr_date: str) -> str:
 
 def get_options_implied_move_yfinance(ticker: str, curr_date: str) -> str:
     """Estimate implied move from nearest-expiry ATM straddle."""
+    if is_strict_temporal():
+        return skip_live_only_message(
+            "Options implied move",
+            curr_date,
+            "historical option chains are not available via yfinance in strict mode",
+        )
     try:
         symbol = ticker.upper()
         as_of = _to_datetime(curr_date)
@@ -345,7 +413,7 @@ def get_options_implied_move_yfinance(ticker: str, curr_date: str) -> str:
         return "\n".join(
             [
                 f"# Options Implied Move for {symbol}",
-                f"Trade date: {curr_date}",
+                data_as_of_header(curr_date).strip(),
                 f"Selected expiry: {chosen_expiry}",
                 f"Reference spot: {spot:.4f}",
                 f"Approx ATM strike: {strike:.4f}",

@@ -8,6 +8,7 @@ from typing import Any, Dict
 import requests
 
 from tradingagents.dataflows.config import DataVendorSkipped
+from tradingagents.dataflows.temporal import is_strict_temporal, skip_live_only_message
 
 CNN_FG_URL = "https://production.dataviz.cnn.io/index/fearandgreed/graphdata"
 
@@ -30,6 +31,13 @@ def get_fear_greed_index_cnn(curr_date: str) -> str:
         datetime.strptime(curr_date, "%Y-%m-%d")
     except ValueError as exc:
         return f"Invalid curr_date for Fear & Greed: {curr_date} ({exc})"
+
+    if is_strict_temporal():
+        return skip_live_only_message(
+            "CNN Fear & Greed index",
+            curr_date,
+            "live-only index; not available for historical point-in-time eval",
+        )
 
     try:
         r = requests.get(CNN_FG_URL, headers=_headers(), timeout=30)

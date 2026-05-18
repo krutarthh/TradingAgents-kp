@@ -43,6 +43,8 @@ def run_single_pipeline_eval(job: Dict[str, Any]) -> Dict[str, Any]:
     benchmark = str(job["benchmark"])
     run_date = date.fromisoformat(str(job["run_date_iso"]))
     cfg: Dict[str, Any] = dict(job["config"])
+    cfg["eval_cutoff_date"] = anchor
+    cfg["eval_strict_temporal"] = cfg.get("eval_strict_temporal", True)
 
     row: Dict[str, Any] = {
         "ticker": ticker,

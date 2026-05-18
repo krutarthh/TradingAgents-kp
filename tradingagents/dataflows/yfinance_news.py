@@ -5,6 +5,7 @@ from datetime import datetime
 from dateutil.relativedelta import relativedelta
 
 from .stockstats_utils import yf_retry
+from .temporal import is_strict_temporal
 
 
 def _extract_article_data(article: dict) -> dict:
@@ -81,11 +82,12 @@ def get_news_yfinance(
         for article in news:
             data = _extract_article_data(article)
 
-            # Filter by date if publish time is available
             if data["pub_date"]:
                 pub_date_naive = data["pub_date"].replace(tzinfo=None)
                 if not (start_dt <= pub_date_naive <= end_dt + relativedelta(days=1)):
                     continue
+            elif is_strict_temporal():
+                continue
 
             news_str += f"### {data['title']} (source: {data['publisher']})\n"
             if data["summary"]:
@@ -174,11 +176,17 @@ def get_global_news_yfinance(
                     pub_naive = data["pub_date"].replace(tzinfo=None) if hasattr(data["pub_date"], "replace") else data["pub_date"]
                     if pub_naive > curr_dt + relativedelta(days=1):
                         continue
+                    if pub_naive < start_dt:
+                        continue
+                elif is_strict_temporal():
+                    continue
                 title = data["title"]
                 publisher = data["publisher"]
                 link = data["link"]
                 summary = data["summary"]
             else:
+                if is_strict_temporal():
+                    continue
                 title = article.get("title", "No title")
                 publisher = article.get("publisher", "Unknown")
                 link = article.get("link", "")

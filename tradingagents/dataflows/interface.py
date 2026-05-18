@@ -229,6 +229,10 @@ def route_to_vendor(method: str, *args, **kwargs):
         return result
 
     if last_error is not None:
+        if isinstance(last_error, DataVendorSkipped):
+            vendor = configured_vendors[-1]
+            body = str(last_error) or f"{method} unavailable (vendor skipped)"
+            return prefix_string_body(method, vendor, body, args, kwargs)
         raise RuntimeError(
             f"All configured vendors failed for '{method}' (tried: {', '.join(configured_vendors)})"
         ) from last_error
