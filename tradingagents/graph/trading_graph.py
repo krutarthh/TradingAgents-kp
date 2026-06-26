@@ -38,15 +38,19 @@ from tradingagents.agents.utils.agent_utils import (
     get_insider_transactions,
     get_fear_greed_index,
     get_global_news,
+    get_social_sentiment,
     get_analyst_estimates,
     get_peer_comparables,
     get_macro_regime,
     get_sector_etf_trends,
     get_options_implied_move,
+    get_options_analytics,
     probability_weighted_price,
     get_sec_filing_highlights,
     get_sec_filing_sections,
     get_earnings_transcript_highlights,
+    get_ownership_short_interest,
+    get_earnings_calendar,
 )
 from tradingagents.agents.utils.calculator_tool import (
     evaluate_math_expression,
@@ -124,6 +128,8 @@ class TradingAgentsGraph:
         self.conditional_logic = ConditionalLogic(
             max_debate_rounds=self.config["max_debate_rounds"],
             max_risk_discuss_rounds=self.config["max_risk_discuss_rounds"],
+            adaptive_debate=self.config.get("adaptive_debate", False),
+            adaptive_debate_max_rounds=self.config.get("adaptive_debate_max_rounds"),
         )
         self.graph_setup = GraphSetup(
             self.quick_thinking_llm,
@@ -186,7 +192,8 @@ class TradingAgentsGraph:
             ),
             "social": ToolNode(
                 [
-                    # News tools for social media analysis
+                    # Real crowd-sentiment plus the news proxy.
+                    get_social_sentiment,
                     get_news,
                 ]
             ),
@@ -206,6 +213,8 @@ class TradingAgentsGraph:
                     get_cashflow,
                     get_income_statement,
                     get_insider_transactions,
+                    get_ownership_short_interest,
+                    get_earnings_calendar,
                     evaluate_math_expression,
                     implied_cagr,
                     valuation_sensitivity_table,
@@ -221,6 +230,8 @@ class TradingAgentsGraph:
                     get_macro_regime,
                     get_sector_etf_trends,
                     get_options_implied_move,
+                    get_options_analytics,
+                    get_earnings_calendar,
                     get_news,
                     probability_weighted_price,
                     evaluate_math_expression,
@@ -285,9 +296,16 @@ class TradingAgentsGraph:
         if not pending:
             return
 
+        # Reflect over the same horizon the eval harness scores against, instead
+        # of a hardcoded 5-day window, so the learning loop teaches the horizon
+        # we actually care about. Configurable via ``eval_holding_days``.
+        holding_days = int(self.config.get("eval_holding_days") or 60)
+
         updates = []
         for entry in pending:
-            raw, alpha, days = self._fetch_returns(ticker, entry["date"])
+            raw, alpha, days = self._fetch_returns(
+                ticker, entry["date"], holding_days=holding_days
+            )
             if raw is None:
                 continue  # price not available yet — try again next run
             reflection = self.reflector.reflect_on_final_decision(
@@ -374,9 +392,24 @@ class TradingAgentsGraph:
 
         # Store current state for reflection.
         self.curr_state = final_state
+        # Expose the rich PM signal (rating, confidence, targets, scenario
+        # probabilities, trader reconciliation) for package/CLI consumers.
+        self.curr_signal = final_state.get("final_decision_signal", {})
 
         # Log state to disk.
         self._log_state(trade_date, final_state)
+
+        shadow_path = self.config.get("live_shadow_book_path")
+        signal = final_state.get("final_decision_signal") or {}
+        if shadow_path and signal:
+            from tradingagents.evaluation.live_shadow_book import append_shadow_book_row
+
+            append_shadow_book_row(
+                shadow_path,
+                company_name,
+                str(trade_date),
+                signal,
+            )
 
         # Store decision for deferred reflection on the next same-ticker run.
         self.memory_log.store_decision(
@@ -429,6 +462,7 @@ class TradingAgentsGraph:
             },
             "investment_plan": final_state["investment_plan"],
             "final_trade_decision": final_state["final_trade_decision"],
+            "final_decision_signal": final_state.get("final_decision_signal", {}),
         }
 
         # Save to file

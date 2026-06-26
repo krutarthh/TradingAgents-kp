@@ -30,6 +30,7 @@ def get_indicator(
     supported_indicators = {
         "close_50_sma": ("50 SMA", "close"),
         "close_200_sma": ("200 SMA", "close"),
+        "close_20_sma": ("20 SMA", "close"),
         "close_10_ema": ("10 EMA", "close"),
         "macd": ("MACD", "close"),
         "macds": ("MACD Signal", "close"),
@@ -45,6 +46,7 @@ def get_indicator(
     indicator_descriptions = {
         "close_50_sma": "50 SMA: A medium-term trend indicator. Usage: Identify trend direction and serve as dynamic support/resistance. Tips: It lags price; combine with faster indicators for timely signals.",
         "close_200_sma": "200 SMA: A long-term trend benchmark. Usage: Confirm overall market trend and identify golden/death cross setups. Tips: It reacts slowly; best for strategic trend confirmation rather than frequent trading entries.",
+        "close_20_sma": "20 SMA: A short-to-medium trend line. Usage: Near-term support/resistance and structure. Tips: Pair with 50/200 SMA for layered trend context.",
         "close_10_ema": "10 EMA: A responsive short-term average. Usage: Capture quick shifts in momentum and potential entry points. Tips: Prone to noise in choppy markets; use alongside longer averages for filtering false signals.",
         "macd": "MACD: Computes momentum via differences of EMAs. Usage: Look for crossovers and divergence as signals of trend changes. Tips: Confirm with other indicators in low-volatility or sideways markets.",
         "macds": "MACD Signal: An EMA smoothing of the MACD line. Usage: Use crossovers with the MACD line to trigger trades. Tips: Should be part of a broader strategy to avoid false positives.",
@@ -87,6 +89,14 @@ def get_indicator(
                 "symbol": symbol,
                 "interval": interval,
                 "time_period": "200",
+                "series_type": series_type,
+                "datatype": "csv"
+            })
+        elif indicator == "close_20_sma":
+            data = _make_api_request("SMA", {
+                "symbol": symbol,
+                "interval": interval,
+                "time_period": "20",
                 "series_type": series_type,
                 "datatype": "csv"
             })
@@ -143,9 +153,9 @@ def get_indicator(
                 "datatype": "csv"
             })
         elif indicator == "vwma":
-            # Alpha Vantage doesn't have direct VWMA, so we'll return an informative message
-            # In a real implementation, this would need to be calculated from OHLCV data
             return f"## VWMA (Volume Weighted Moving Average) for {symbol}:\n\nVWMA calculation requires OHLCV data and is not directly available from Alpha Vantage API.\nThis indicator would need to be calculated from the raw stock data using volume-weighted price averaging.\n\n{indicator_descriptions.get('vwma', 'No description available.')}"
+        elif indicator == "volume_20_sma":
+            return f"## Volume 20 SMA for {symbol}:\n\nVolume SMA requires OHLCV data and is not directly available from Alpha Vantage API.\nUse the yfinance vendor path or calculate from raw volume series.\n\nVolume 20 SMA: Average daily volume over 20 sessions for breakout confirmation."
         else:
             return f"Error: Indicator {indicator} not implemented yet."
 
@@ -166,7 +176,7 @@ def get_indicator(
             "macd": "MACD", "macds": "MACD_Signal", "macdh": "MACD_Hist",
             "boll": "Real Middle Band", "boll_ub": "Real Upper Band", "boll_lb": "Real Lower Band",
             "rsi": "RSI", "atr": "ATR", "close_10_ema": "EMA",
-            "close_50_sma": "SMA", "close_200_sma": "SMA"
+            "close_50_sma": "SMA", "close_200_sma": "SMA", "close_20_sma": "SMA"
         }
 
         target_col_name = col_name_map.get(indicator)

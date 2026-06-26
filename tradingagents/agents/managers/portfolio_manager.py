@@ -15,9 +15,15 @@ from tradingagents.agents.utils.agent_utils import (
     build_instrument_context,
     get_language_instruction,
 )
+from tradingagents.agents.utils.decision_signal import (
+    extract_trader_action,
+    reconcile_trader_pm,
+    signal_from_decision,
+    signal_from_markdown,
+)
 from tradingagents.agents.utils.structured import (
     bind_structured,
-    invoke_structured_or_freetext,
+    invoke_structured_capturing,
 )
 
 
@@ -74,12 +80,29 @@ Output requirements:
 
 Be decisive and ground every conclusion in specific evidence from the analysts.{get_language_instruction()}"""
 
-        final_trade_decision = invoke_structured_or_freetext(
+        final_trade_decision, decision_obj, fallback_used = invoke_structured_capturing(
             structured_llm,
             llm,
             prompt,
             render_pm_decision,
             "Portfolio Manager",
+        )
+
+        # Capture the full signal the PM produced instead of discarding
+        # everything except the 5-tier word. Prefer the typed object; only fall
+        # back to (lossy) markdown parsing when structured output was unavailable.
+        if decision_obj is not None:
+            signal = signal_from_decision(decision_obj)
+        else:
+            signal = signal_from_markdown(final_trade_decision)
+        signal["structured_fallback_used"] = fallback_used
+
+        # Reconcile the Trader's 3-tier action with the PM's 5-tier rating so a
+        # silent divergence is recorded rather than hidden.
+        trader_action = extract_trader_action(trader_plan)
+        signal["trader_action"] = trader_action
+        signal["decision_consistency"] = reconcile_trader_pm(
+            trader_action, signal.get("rating_bucket", "neutral")
         )
 
         new_risk_debate_state = {
@@ -98,6 +121,7 @@ Be decisive and ground every conclusion in specific evidence from the analysts.{
         return {
             "risk_debate_state": new_risk_debate_state,
             "final_trade_decision": final_trade_decision,
+            "final_decision_signal": signal,
         }
 
     return portfolio_manager_node

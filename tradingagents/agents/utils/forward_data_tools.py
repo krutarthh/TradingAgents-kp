@@ -50,6 +50,18 @@ def get_options_implied_move(
 
 
 @tool
+def get_options_analytics(
+    ticker: Annotated[str, "Ticker symbol"],
+    curr_date: Annotated[str, "Current date in yyyy-mm-dd format"],
+) -> str:
+    """Aggregate put/call open-interest ratio and approximate ATM implied volatility.
+
+    Live option chains only; returns a skip notice in strict historical eval mode.
+    """
+    return route_to_vendor("get_options_analytics", ticker, curr_date)
+
+
+@tool
 def probability_weighted_price(
     bull_price: Annotated[float, "Bull-case target price"],
     bull_prob: Annotated[float, "Bull probability (0..1)"],

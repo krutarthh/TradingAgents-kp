@@ -3,6 +3,7 @@ from tradingagents.agents.utils.agent_utils import (
     build_instrument_context,
     get_fear_greed_index,
     get_global_news,
+    get_insider_transactions,
     get_language_instruction,
     get_macro_regime,
     get_news,
@@ -20,6 +21,7 @@ def create_news_analyst(llm):
             get_global_news,
             get_macro_regime,
             get_fear_greed_index,
+            get_insider_transactions,
         ]
 
         system_message = (
@@ -30,6 +32,7 @@ Use tools:
 - `get_fear_greed_index(curr_date)` early — use CNN sentiment to contextualize risk appetite/positioning.
 - `get_news(ticker, start_date, end_date)` for company-specific and sector-relevant developments.
 - `get_global_news(curr_date, look_back_days, limit)` for macro and geopolitical context.
+- `get_insider_transactions(ticker, curr_date)` when management activity is a headline catalyst.
 
 Required report sections (use these exact headings):
 ## Executive Summary

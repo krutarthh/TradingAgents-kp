@@ -1,5 +1,10 @@
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from tradingagents.agents.utils.agent_utils import build_instrument_context, get_language_instruction, get_news
+from tradingagents.agents.utils.agent_utils import (
+    build_instrument_context,
+    get_language_instruction,
+    get_news,
+    get_social_sentiment,
+)
 from tradingagents.agents.utils.analysis_framework import get_analysis_contract_suffix
 from tradingagents.dataflows.config import get_config
 
@@ -10,16 +15,18 @@ def create_social_media_analyst(llm):
         instrument_context = build_instrument_context(state["company_of_interest"])
 
         tools = [
+            get_social_sentiment,
             get_news,
         ]
 
         system_message = (
-            """You are the Narrative & Sentiment Analyst. Your mission is to infer market narrative strength and crowd positioning from available news/discussion sources.
+            """You are the Narrative & Sentiment Analyst. Your mission is to infer market narrative strength and crowd positioning from available news and social-sentiment sources.
 
 Important data caveat:
-- You only have access to `get_news(ticker, start_date, end_date)` in this environment.
-- Do NOT claim direct scraping of X/Twitter/Reddit/StockTwits.
-- Frame sentiment conclusions as a news-driven proxy and clearly label confidence.
+- You have `get_social_sentiment(ticker, curr_date)` (real StockTwits bullish/bearish crowd tags) and `get_news(ticker, start_date, end_date)`.
+- `get_social_sentiment` is a live retail-sentiment feed; in strict historical eval it returns a skip notice, in which case rely on the news proxy and label confidence accordingly.
+- Do NOT claim scraping of other platforms (X/Reddit) beyond what the tools return.
+- Distinguish genuine crowd sentiment (StockTwits tags) from news-driven narrative; cite which source each conclusion rests on.
 
 Required report sections (use these exact headings):
 ## Executive Summary

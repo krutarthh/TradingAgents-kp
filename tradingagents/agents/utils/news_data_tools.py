@@ -63,3 +63,16 @@ def get_fear_greed_index(
     Uses configured news_data vendor route.
     """
     return route_to_vendor("get_fear_greed_index", curr_date)
+
+
+@tool
+def get_social_sentiment(
+    ticker: Annotated[str, "Ticker symbol"],
+    curr_date: Annotated[str, "Current date in yyyy-mm-dd format"],
+) -> str:
+    """
+    Retrieve real social-media crowd sentiment (StockTwits bullish/bearish tags).
+    This is a genuine retail-sentiment signal, distinct from the news proxy.
+    Returns a skip notice in strict historical eval mode (live-only stream).
+    """
+    return route_to_vendor("get_social_sentiment", ticker, curr_date)

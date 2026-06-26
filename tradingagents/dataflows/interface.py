@@ -22,6 +22,13 @@ from .fred_macro import get_macro_regime_fred
 from .config import DataVendorSkipped, get_config
 from .yfinance_news import get_news_yfinance, get_global_news_yfinance
 from .cnn_sentiment import get_fear_greed_index_cnn
+from .stocktwits_sentiment import get_social_sentiment_stocktwits
+from .ownership import get_ownership_short_interest_yfinance
+from .options_analytics import get_options_analytics_yfinance
+from .earnings_calendar import get_earnings_calendar_yfinance
+from .finnhub_news import get_earnings_calendar_finnhub, get_news_finnhub
+from .fmp_estimates import get_analyst_estimates_fmp
+from .alpha_vantage_transcripts import get_earnings_transcript_alpha_vantage
 from .api_ninjas_sec import (
     get_earnings_transcript_highlights_stub,
     get_sec_filing_highlights_ninjas,
@@ -77,6 +84,19 @@ TOOLS_CATEGORIES = {
             "get_fear_greed_index",
         ]
     },
+    "social_data": {
+        "description": "Social-media crowd sentiment",
+        "tools": [
+            "get_social_sentiment",
+        ]
+    },
+    "ownership_data": {
+        "description": "Institutional ownership, short interest, and earnings calendar",
+        "tools": [
+            "get_ownership_short_interest",
+            "get_earnings_calendar",
+        ]
+    },
     "forward_data": {
         "description": "Forward-looking estimates, macro regime, and peer comparables",
         "tools": [
@@ -85,6 +105,7 @@ TOOLS_CATEGORIES = {
             "get_macro_regime",
             "get_sector_etf_trends",
             "get_options_implied_move",
+            "get_options_analytics",
         ],
     },
 }
@@ -140,14 +161,17 @@ VENDOR_METHODS = {
     },
     "get_earnings_transcript_highlights": {
         "financial_modeling_prep": get_earnings_transcript_highlights_fmp,
+        # Second real vendor for failover before falling back to the stub.
+        "alpha_vantage": get_earnings_transcript_alpha_vantage,
         # Historical config key — transcript ingestion was stub-only under Ninjas.
         "api_ninjas": get_earnings_transcript_highlights_stub,
         "stub": get_earnings_transcript_highlights_stub,
     },
     # news_data
     "get_news": {
-        "alpha_vantage": get_alpha_vantage_news,
         "yfinance": get_news_yfinance,
+        "finnhub": get_news_finnhub,
+        "alpha_vantage": get_alpha_vantage_news,
     },
     "get_global_news": {
         "yfinance": get_global_news_yfinance,
@@ -160,8 +184,21 @@ VENDOR_METHODS = {
     "get_fear_greed_index": {
         "yfinance": get_fear_greed_index_cnn,
     },
+    # social_data
+    "get_social_sentiment": {
+        "stocktwits": get_social_sentiment_stocktwits,
+    },
+    # ownership_data
+    "get_ownership_short_interest": {
+        "yfinance": get_ownership_short_interest_yfinance,
+    },
+    "get_earnings_calendar": {
+        "yfinance": get_earnings_calendar_yfinance,
+        "finnhub": get_earnings_calendar_finnhub,
+    },
     # forward_data
     "get_analyst_estimates": {
+        "financial_modeling_prep": get_analyst_estimates_fmp,
         "yfinance": get_analyst_estimates_yfinance,
     },
     "get_peer_comparables": {
@@ -175,6 +212,9 @@ VENDOR_METHODS = {
     },
     "get_options_implied_move": {
         "yfinance": get_options_implied_move_yfinance,
+    },
+    "get_options_analytics": {
+        "yfinance": get_options_analytics_yfinance,
     },
 }
 

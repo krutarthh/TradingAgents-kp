@@ -1,0 +1,19 @@
+{
+  "description": "Walk-forward pipeline eval: combines acute-stress anchors (dot-com 2000-09-15, Lehman 2008-09-15) with normal-market anchors (2015/2020/2025) so prediction quality is measured across regimes, not just crises. Anchors are ordered chronologically for expanding-window analysis (train on earlier anchors, evaluate on later ones). Benchmark SPY.",
+  "anchors": ["2000-09-15", "2008-09-15", "2015-05-12", "2020-05-12", "2025-05-12"],
+  "horizons_calendar_days": [60, 365, 1095],
+  "benchmark_ticker": "SPY",
+  "walk_forward": true,
+  "tickers": [
+    "NVDA",
+    "TSM",
+    "AAPL",
+    "MSFT",
+    "JPM",
+    "XOM",
+    "UNH",
+    "WMT",
+    "CAT",
+    "CSCO"
+  ]
+}

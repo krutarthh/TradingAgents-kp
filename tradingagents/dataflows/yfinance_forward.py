@@ -76,6 +76,54 @@ def _fmt_pct(value: Optional[float]) -> str:
     return f"{value * 100:.2f}%"
 
 
+def _fmt_num(value: Optional[float], decimals: int = 2) -> str:
+    if value is None:
+        return "N/A"
+    try:
+        return f"{float(value):.{decimals}f}"
+    except (TypeError, ValueError):
+        return "N/A"
+
+
+def _valuation_multiples(symbol: str) -> Dict[str, Optional[float]]:
+    """Live snapshot of common valuation multiples from Yahoo .info."""
+    try:
+        info = yf_retry(lambda: yf.Ticker(symbol).info) or {}
+    except Exception:
+        return {}
+    keys = (
+        "trailingPE",
+        "forwardPE",
+        "enterpriseToEbitda",
+        "priceToSalesTrailing12Months",
+        "revenueGrowth",
+        "earningsGrowth",
+        "profitMargins",
+    )
+    out: Dict[str, Optional[float]] = {}
+    for key in keys:
+        val = info.get(key)
+        if val is None or val == "":
+            out[key] = None
+        else:
+            try:
+                out[key] = float(val)
+            except (TypeError, ValueError):
+                out[key] = None
+    return out
+
+
+def _valuation_row(symbol: str, multiples: Dict[str, Optional[float]]) -> str:
+    return (
+        f"| {symbol} | {_fmt_num(multiples.get('trailingPE'))} | "
+        f"{_fmt_num(multiples.get('forwardPE'))} | "
+        f"{_fmt_num(multiples.get('enterpriseToEbitda'))} | "
+        f"{_fmt_num(multiples.get('priceToSalesTrailing12Months'))} | "
+        f"{_fmt_pct(multiples.get('revenueGrowth'))} | "
+        f"{_fmt_pct(multiples.get('earningsGrowth'))} |"
+    )
+
+
 def _safe_df_to_csv(df: Optional[pd.DataFrame], title: str) -> str:
     if df is None or df.empty:
         return f"## {title}\nNo data available.\n"
@@ -130,6 +178,19 @@ def get_analyst_estimates_yfinance(ticker: str, curr_date: Optional[str] = None)
         tk = yf.Ticker(symbol)
         info = yf_retry(lambda: tk.info) or {}
         as_of = cutoff or datetime.now().strftime("%Y-%m-%d")
+        rec_summary = yf_retry(lambda: tk.recommendations_summary)
+        up_down_lines: List[str] = []
+        if rec_summary is not None and not getattr(rec_summary, "empty", True):
+            row = rec_summary.iloc[0]
+            up_down_lines = [
+                "",
+                "## Analyst recommendation distribution (live)",
+                f"- Strong buy: {row.get('strongBuy', 'N/A')}",
+                f"- Buy: {row.get('buy', 'N/A')}",
+                f"- Hold: {row.get('hold', 'N/A')}",
+                f"- Sell: {row.get('sell', 'N/A')}",
+                f"- Strong sell: {row.get('strongSell', 'N/A')}",
+            ]
         blocks = [
             f"# Analyst and Forward Estimates for {symbol}",
             data_as_of_header(as_of).strip(),
@@ -142,9 +203,10 @@ def get_analyst_estimates_yfinance(ticker: str, curr_date: Optional[str] = None)
             f"Number of analyst opinions: {info.get('numberOfAnalystOpinions', 'N/A')}",
             f"Recommendation mean: {info.get('recommendationMean', 'N/A')}",
             f"Recommendation key: {info.get('recommendationKey', 'N/A')}",
+            *up_down_lines,
             "",
             _safe_df_to_csv(yf_retry(lambda: tk.recommendations), "Recommendations History"),
-            _safe_df_to_csv(yf_retry(lambda: tk.recommendations_summary), "Recommendations Summary"),
+            _safe_df_to_csv(rec_summary, "Recommendations Summary"),
             _safe_df_to_csv(yf_retry(lambda: tk.earnings_estimate), "Earnings Estimate"),
             _safe_df_to_csv(yf_retry(lambda: tk.revenue_estimate), "Revenue Estimate"),
             _safe_df_to_csv(yf_retry(lambda: tk.earnings_history), "Earnings History"),
@@ -214,6 +276,29 @@ def get_peer_comparables_yfinance(ticker: str, curr_date: str) -> str:
             lines.append(
                 f"- {peer}: 1M={_fmt_pct(r1m)}, 3M={_fmt_pct(r3m)}, 12M={_fmt_pct(r12m)}"
             )
+
+        if not is_strict_temporal():
+            target_vals = _valuation_multiples(symbol)
+            lines.extend(
+                [
+                    "",
+                    "## Valuation Multiples (live snapshot)",
+                    "| Ticker | Trailing P/E | Forward P/E | EV/EBITDA | P/S | Rev growth | EPS growth |",
+                    "| --- | --- | --- | --- | --- | --- | --- |",
+                    _valuation_row(symbol, target_vals),
+                ]
+            )
+            for peer, _, _, _ in rows:
+                lines.append(_valuation_row(peer, _valuation_multiples(peer)))
+            lines.extend(
+                [
+                    "",
+                    "## Relative valuation notes",
+                    "- Compare forward P/E and EV/EBITDA vs peers in the same sector row.",
+                    "- Pair multiples with the return grid above — cheap on P/E but lagging 12M returns may signal a value trap.",
+                ]
+            )
+
         return "\n".join(lines)
     except Exception as exc:
         return f"Error fetching peer comparables for {ticker}: {exc}"

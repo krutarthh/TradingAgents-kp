@@ -399,20 +399,53 @@ class TradingMemoryLog:
                 out.append(line)
         return "\n".join(out).strip()[:800]
 
-    def _calibration_summary(self, entries: List[dict]) -> str:
+    @staticmethod
+    def _rating_direction(rating: str) -> int:
+        r = (rating or "").strip().lower()
+        if r in ("buy", "overweight"):
+            return 1
+        if r in ("sell", "underweight"):
+            return -1
+        return 0
+
+    @staticmethod
+    def _pct_to_float(text: str) -> Optional[float]:
+        try:
+            return float((text or "").replace("%", "").replace("+", "").strip())
+        except (ValueError, AttributeError):
+            return None
+
+    def _calibration_summary(self, entries: List[dict], hold_band_pct: float = 2.0) -> str:
+        """Directional, alpha-aware hit rate on recent same-ticker calls.
+
+        A call is a "win" only when its direction matched the realized move:
+        bullish (Buy/Overweight) needs positive alpha, bearish (Sell/Underweight)
+        needs negative alpha, and Hold needs a small move (|alpha| within band).
+        Scored on alpha vs the benchmark, not raw return, so beta-driven moves
+        don't masquerade as correct calls.
+        """
         if not entries:
             return ""
         wins = 0
         eligible = 0
         for e in entries:
-            raw = e.get("raw") or ""
-            try:
-                val = float(raw.replace("%", ""))
-            except ValueError:
+            alpha = self._pct_to_float(e.get("alpha"))
+            if alpha is None:
+                # Fall back to raw only if alpha is unavailable.
+                alpha = self._pct_to_float(e.get("raw"))
+            if alpha is None:
                 continue
+            direction = self._rating_direction(e.get("rating"))
             eligible += 1
-            if val > 0:
+            if direction > 0 and alpha > 0:
+                wins += 1
+            elif direction < 0 and alpha < 0:
+                wins += 1
+            elif direction == 0 and abs(alpha) <= hold_band_pct:
                 wins += 1
         if eligible == 0:
             return ""
-        return f"Calibration summary: {wins}/{eligible} positive raw-return outcomes on recent same-ticker calls."
+        return (
+            f"Calibration summary: {wins}/{eligible} directionally correct calls "
+            f"(alpha-aligned with the rating) on recent same-ticker decisions."
+        )

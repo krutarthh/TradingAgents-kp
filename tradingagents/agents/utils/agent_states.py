@@ -58,9 +58,11 @@ class AgentState(MessagesState):
     fundamentals_report: Annotated[str, "Report from the Fundamentals Researcher"]
     forward_report: Annotated[str, "Forward-looking scenario and consensus report"]
     integrated_thesis_report: Annotated[str, "Synthesized cross-report thesis before debate"]
+    empty_report_lanes: Annotated[str, "Comma-separated analyst lanes that produced no report (guarded before debate)"]
     verification_notes: Annotated[str, "Structural checks from verifier-lite before Research Manager"]
     verification_status: Annotated[str, "Verification gate outcome: pass/warn/fail"]
     verification_attempts: Annotated[int, "Number of verifier-triggered retries so far"]
+    verification_failed_lane: Annotated[str, "Analyst lane blamed for a verification fail (for targeted re-run)"]
 
     # researcher team discussion step
     investment_debate_state: Annotated[
@@ -75,4 +77,8 @@ class AgentState(MessagesState):
         RiskDebateState, "Current state of the debate on evaluating risk"
     ]
     final_trade_decision: Annotated[str, "Final decision made by the Risk Analysts"]
+    final_decision_signal: Annotated[
+        dict,
+        "Structured signal extracted from the PM decision (rating, score, confidence, targets, scenario probabilities, trader reconciliation)",
+    ]
     past_context: Annotated[str, "Memory log context injected at run start (same-ticker decisions + cross-ticker lessons)"]

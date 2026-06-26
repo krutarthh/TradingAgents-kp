@@ -21,7 +21,6 @@ import json
 import os
 import sys
 import uuid
-from collections import defaultdict
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from datetime import date
 from pathlib import Path
@@ -107,26 +106,105 @@ def _merge_eval_config(
     return cfg
 
 
-def _summarize(rows: List[Dict[str, Any]]) -> Dict[str, Any]:
-    by_anchor: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
-    for row in rows:
-        by_anchor[row["trade_date"]].append(row)
+def _load_rubric_scores(path: Optional[Path]) -> Optional[Dict[str, float]]:
+    """Load aggregate rubric dimension scores (0-2) from a JSON file, if present.
 
-    summary: Dict[str, Any] = {"anchors": {}}
-    for anchor, rs in by_anchor.items():
-        bullish = [r for r in rs if r.get("rating_bucket") == "bullish" and not r.get("error")]
-        alpha365_ok = [
-            r
-            for r in bullish
-            if r.get("alpha_return_365d") is not None and float(r["alpha_return_365d"]) > 0
-        ]
-        summary["anchors"][anchor] = {
-            "n_rows": len(rs),
-            "n_ok_runs": sum(1 for r in rs if not r.get("error")),
-            "bullish_count": len(bullish),
-            "bullish_alpha365_positive_count": len(alpha365_ok),
-        }
-    return summary
+    Wires :func:`weighted_rubric_score` into the batch summary so process-quality
+    (not just outcome alpha) is tracked. The file is optional; absence is fine.
+    """
+    if path is None or not path.exists():
+        return None
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (ValueError, OSError):
+        return None
+    scores = data.get("scores", data) if isinstance(data, dict) else None
+    if not isinstance(scores, dict):
+        return None
+    out: Dict[str, float] = {}
+    for k, v in scores.items():
+        try:
+            out[str(k)] = float(v)
+        except (TypeError, ValueError):
+            continue
+    return out or None
+
+
+def _summarize(
+    rows: List[Dict[str, Any]],
+    horizons: List[int],
+    rubric_scores: Optional[Dict[str, float]] = None,
+) -> Dict[str, Any]:
+    """Rich prediction-quality summary (accuracy, confusion, baselines, CIs)."""
+    from tradingagents.evaluation.metrics import summarize_predictions
+
+    return summarize_predictions(rows, horizons, rubric_scores=rubric_scores)
+
+
+def _append_eval_history(
+    history_path: Path,
+    run_id: str,
+    meta: Dict[str, Any],
+    summary: Dict[str, Any],
+    horizons: List[int],
+) -> None:
+    """Append one row per run to a longitudinal eval_history.csv.
+
+    Lets you track whether predictions improve over time across prompt/model
+    versions, instead of only inspecting a single run's summary in isolation.
+    """
+    from datetime import datetime, timezone
+
+    header = [
+        "run_id",
+        "timestamp_utc",
+        "universe_file",
+        "llm_provider",
+        "quick_think_llm",
+        "deep_think_llm",
+        "prompt_version",
+        "n_rows",
+        "n_ok_runs",
+        "n_rating_parse_failures",
+        "n_structured_fallbacks",
+        "rubric_weighted_score",
+    ]
+    for h in horizons:
+        header.extend(
+            [
+                f"directional_accuracy_{h}d",
+                f"long_short_alpha_{h}d",
+                f"sharpe_like_{h}d",
+            ]
+        )
+
+    row: Dict[str, Any] = {
+        "run_id": run_id,
+        "timestamp_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "universe_file": meta.get("universe_file", ""),
+        "llm_provider": meta.get("llm_provider", ""),
+        "quick_think_llm": meta.get("quick_think_llm", ""),
+        "deep_think_llm": meta.get("deep_think_llm", ""),
+        "prompt_version": meta.get("prompt_version", ""),
+        "n_rows": summary.get("n_rows", 0),
+        "n_ok_runs": summary.get("n_ok_runs", 0),
+        "n_rating_parse_failures": summary.get("n_rating_parse_failures", 0),
+        "n_structured_fallbacks": summary.get("n_structured_fallbacks", 0),
+        "rubric_weighted_score": summary.get("rubric_weighted_score", ""),
+    }
+    for h in horizons:
+        block = summary.get("horizons", {}).get(str(h), {})
+        row[f"directional_accuracy_{h}d"] = block.get("directional_accuracy", "")
+        row[f"long_short_alpha_{h}d"] = block.get("long_short_alpha", "")
+        row[f"sharpe_like_{h}d"] = block.get("sharpe_like", "")
+
+    history_path.parent.mkdir(parents=True, exist_ok=True)
+    write_header = not history_path.exists()
+    with open(history_path, "a", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=header, extrasaction="ignore")
+        if write_header:
+            w.writeheader()
+        w.writerow(row)
 
 
 def main() -> int:
@@ -152,6 +230,24 @@ def main() -> int:
         help="Parallel process count for full runs (each job isolated; 1 = sequential).",
     )
     p.add_argument("--skip-rubric-artifacts", action="store_true")
+    p.add_argument(
+        "--prompt-version",
+        type=str,
+        default="",
+        help="Free-form prompt/config version tag recorded in metadata and eval_history.csv.",
+    )
+    p.add_argument(
+        "--eval-history",
+        type=Path,
+        default=None,
+        help="Path to a longitudinal eval_history.csv (default: <out>/../eval_history.csv).",
+    )
+    p.add_argument(
+        "--rubric-scores",
+        type=Path,
+        default=None,
+        help="Optional JSON of aggregate rubric dimension scores (0-2) to fold into the summary.",
+    )
     p.add_argument(
         "--resume-from",
         type=Path,
@@ -214,6 +310,7 @@ def main() -> int:
                 "max_debate_rounds": 1,
                 "max_risk_discuss_rounds": 1,
                 "eval_strict_temporal": True,
+                "prompt_version": args.prompt_version,
             },
             indent=2,
         ),
@@ -229,6 +326,24 @@ def main() -> int:
         "trade_date",
         "rating",
         "rating_bucket",
+        # Rich signal extracted from the structured PM decision (Phase 2).
+        "rating_score",
+        "directional_score",
+        "confidence",
+        "price_target",
+        "time_horizon",
+        "bull_case_target",
+        "base_case_target",
+        "bear_case_target",
+        "bull_probability",
+        "base_probability",
+        "bear_probability",
+        "trader_action",
+        "decision_consistency",
+        "rating_parse_failed",
+        "structured_fallback_used",
+        # Point-in-time momentum baseline input.
+        "prior_return_trailing",
         "error",
         "llm_provider",
         "quick_think_llm",
@@ -301,9 +416,16 @@ def main() -> int:
         for row in rows_out:
             w.writerow(row)
 
-    summary = _summarize(rows_out)
+    rubric_scores = _load_rubric_scores(args.rubric_scores)
+    summary = _summarize(rows_out, horizons, rubric_scores=rubric_scores)
     (out_dir / "eval_summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
+
+    meta = json.loads(meta_path.read_text(encoding="utf-8"))
+    history_path = args.eval_history or (out_dir.parent / "eval_history.csv")
+    _append_eval_history(history_path, run_id, meta, summary, horizons)
+
     print(f"Wrote {csv_path} ({len(rows_out)} rows)")
+    print(f"Appended run summary to {history_path}")
     print(json.dumps(summary, indent=2))
     return 0
 

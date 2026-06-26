@@ -19,7 +19,7 @@ all three agents log the same warnings when fallback fires.
 from __future__ import annotations
 
 import logging
-from typing import Any, Callable, Optional, TypeVar
+from typing import Any, Callable, Optional, Tuple, TypeVar
 
 from pydantic import BaseModel
 
@@ -59,10 +59,33 @@ def invoke_structured_or_freetext(
     shape). The same value is forwarded to the free-text path so the
     fallback sees the same input the structured call did.
     """
+    rendered, _obj, _fallback = invoke_structured_capturing(
+        structured_llm, plain_llm, prompt, render, agent_name
+    )
+    return rendered
+
+
+def invoke_structured_capturing(
+    structured_llm: Optional[Any],
+    plain_llm: Any,
+    prompt: Any,
+    render: Callable[[T], str],
+    agent_name: str,
+) -> Tuple[str, Optional[T], bool]:
+    """Like :func:`invoke_structured_or_freetext` but also returns the parsed object.
+
+    Returns ``(rendered_markdown, parsed_obj_or_None, fallback_used)``.
+
+    ``parsed_obj`` is the typed Pydantic instance when structured output
+    succeeded, or ``None`` when the agent fell back to free-text generation.
+    ``fallback_used`` is True whenever the free-text path produced the result,
+    so callers (and the eval harness) can track how often the schema guarantee
+    was lost instead of silently trusting a fragile markdown re-parse.
+    """
     if structured_llm is not None:
         try:
             result = structured_llm.invoke(prompt)
-            return render(result)
+            return render(result), result, False
         except Exception as exc:
             logger.warning(
                 "%s: structured-output invocation failed (%s); retrying once as free text",
@@ -70,4 +93,4 @@ def invoke_structured_or_freetext(
             )
 
     response = plain_llm.invoke(prompt)
-    return response.content
+    return response.content, None, True

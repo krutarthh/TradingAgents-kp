@@ -8,21 +8,28 @@ from typing import Any, Dict, List
 from tradingagents.dataflows.config import get_config
 
 
-def _scenario_probability_notes(text: str) -> List[str]:
-    notes = []
-    if not text or "## Bull" not in text and "bull" not in text.lower():
-        return notes
+def _scenario_probability_sum(text: str) -> float | None:
+    """Best-effort sum of the first few percentage figures (scenario probs)."""
+    if not text or ("## Bull" not in text and "bull" not in text.lower()):
+        return None
     nums = re.findall(r"\b(\d{1,2}(?:\.\d+)?)\s*%", text)
-    if len(nums) >= 3:
-        try:
-            total = sum(float(x) for x in nums[:6]) / 100.0
-            if total < 0.85 or total > 1.15:
-                notes.append(
-                    f"forward_report scenario % values sum roughly {total:.2f} — confirm bull/base/bear probabilities are intentional"
-                )
-        except ValueError:
-            pass
-    return notes
+    if len(nums) < 3:
+        return None
+    try:
+        return sum(float(x) for x in nums[:6]) / 100.0
+    except ValueError:
+        return None
+
+
+def _scenario_probability_notes(text: str) -> List[str]:
+    total = _scenario_probability_sum(text)
+    if total is None:
+        return []
+    if total < 0.85 or total > 1.15:
+        return [
+            f"forward_report scenario % values sum roughly {total:.2f} — confirm bull/base/bear probabilities are intentional"
+        ]
+    return []
 
 
 def _pillar_hint_notes(report_key: str, body: str) -> List[str]:
@@ -117,6 +124,27 @@ def create_verification_gate():
         if "valuation triangulation" not in (state.get("forward_report") or "").lower():
             fails.append("forward_report missing valuation triangulation section")
 
+        # Numeric reconciliation (opt-in): a badly-off scenario-probability sum
+        # is promoted from a soft warning to a hard fail so the offending lane
+        # is forced to fix it rather than the issue persisting downstream.
+        if get_config().get("enable_verifier_numeric_reconciliation", False):
+            prob_sum = _scenario_probability_sum(fwd)
+            if prob_sum is not None and (prob_sum < 0.8 or prob_sum > 1.2):
+                fails.append(
+                    f"forward_report scenario probabilities sum to {prob_sum:.2f} (must be ~1.0)"
+                )
+
+        # Attribute the failure to a specific analyst lane so the pipeline can
+        # optionally re-run just that lane instead of only the Thesis Integrator.
+        failed_lane = ""
+        for f in fails:
+            if f.startswith("fundamentals_report"):
+                failed_lane = "fundamentals"
+                break
+            if f.startswith("forward_report"):
+                failed_lane = "forward"
+                break
+
         status = "pass"
         if fails:
             status = "fail"
@@ -143,6 +171,7 @@ def create_verification_gate():
             "verification_notes": summary,
             "verification_status": status,
             "verification_attempts": attempts + (1 if status == "fail" else 0),
+            "verification_failed_lane": failed_lane if status == "fail" else "",
         }
 
     return verification_gate_node

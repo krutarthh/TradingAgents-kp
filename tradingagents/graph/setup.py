@@ -167,13 +167,27 @@ class GraphSetup:
                 "Verification Gate": "Verification Gate",
             },
         )
+        # Targeted lane re-run (opt-in): allow the verifier to send a hard fail
+        # back to the specific analyst that caused it, not just the integrator.
+        lane_targets = {
+            "fundamentals": "Fundamentals Analyst",
+            "forward": "Forward Analyst",
+        }
+        verification_routes = {
+            "Thesis Integrator": "Thesis Integrator",
+            "Research Manager": "Research Manager",
+        }
+        available_lane_nodes = set()
+        for lane, node_name in lane_targets.items():
+            if lane in analyst_nodes:
+                verification_routes[node_name] = node_name
+                available_lane_nodes.add(node_name)
+        self.conditional_logic._available_lane_nodes = available_lane_nodes
+
         workflow.add_conditional_edges(
             "Verification Gate",
             self.conditional_logic.should_continue_after_verification,
-            {
-                "Thesis Integrator": "Thesis Integrator",
-                "Research Manager": "Research Manager",
-            },
+            verification_routes,
         )
         workflow.add_edge("Research Manager", "Trader")
         workflow.add_edge("Trader", "Aggressive Analyst")

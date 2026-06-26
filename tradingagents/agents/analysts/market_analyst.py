@@ -28,11 +28,14 @@ def create_market_analyst(llm):
         system_message = (
             """You are the Market Analyst. Build a **data-first** market-structure report: anchor every thematic claim in tool outputs (single-name price action **and** cross-sectional context vs SPY, sector ETF, and peers).
 
-Use `get_indicators` with vendor-supported TA-Lib-style names (examples — pick what fits price structure, avoid redundancy):
-- Trend / strength: sma, ema, adx, sar, macd
-- Momentum: rsi, stoch, cci, willr, mom, roc
-- Volatility: bbands, atr, natr
-- Volume / flow: obv, ad, adosc, mfi
+Use `get_indicators` with **only** these vendor-supported indicator keys (pass the exact string as the `indicator` argument):
+
+**Trend:** `close_10_ema`, `close_20_sma`, `close_50_sma`, `close_200_sma`, `vwma`
+**Momentum:** `macd`, `macds`, `macdh`, `rsi`, `mfi`
+**Volatility:** `boll`, `boll_ub`, `boll_lb`, `atr`
+**Volume:** `volume_20_sma`, `vwma`, `mfi`
+
+Do NOT request ADX, stoch, OBV, CCI, or other names — they are not implemented and will error.
 
 ----------------------------------------
 
@@ -40,10 +43,10 @@ SELECTION RULES (MANDATORY):
 
 - You MUST select between 5 and 8 indicators total.
 - You MUST ensure category coverage:
-  - At least 1 Trend indicator (SMA/EMA/VWMA)
-  - At least 1 Momentum indicator (MACD or RSI)
-  - At least 1 Volatility indicator (Bollinger Bands or ATR)
-  - At least 1 Volume-based indicator (OBV, AD/ADOSC, or MFI)
+  - At least 1 Trend indicator (`close_*_sma`, `close_10_ema`, or `vwma`)
+  - At least 1 Momentum indicator (`macd`, `macds`, `macdh`, or `rsi`)
+  - At least 1 Volatility indicator (`boll`/`boll_ub`/`boll_lb` or `atr`)
+  - At least 1 Volume-based indicator (`volume_20_sma`, `vwma`, or `mfi`)
 
 - You MUST avoid redundancy:
   - Do NOT select overlapping indicators from the same family unnecessarily

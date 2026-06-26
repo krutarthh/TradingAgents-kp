@@ -10,6 +10,39 @@ from tradingagents.agents.utils.agent_utils import (
 )
 from tradingagents.dataflows.config import get_config
 
+# The five analyst report keys expected before the debate stage.
+_REPORT_KEYS = (
+    "market_report",
+    "sentiment_report",
+    "news_report",
+    "fundamentals_report",
+    "forward_report",
+)
+
+_EMPTY_REPORT_PLACEHOLDER = (
+    "(no report produced — analyst lane did not converge or was skipped; "
+    "treat this lane's evidence as unavailable, do not assume neutral)"
+)
+
+
+def _guard_empty_reports(state) -> dict:
+    """Replace silently-empty analyst reports with an explicit placeholder.
+
+    An analyst that hits the recursion limit mid-tool-loop leaves a blank
+    report that would otherwise flow into the debate as if the lane were
+    benignly neutral. This makes the gap explicit and records which lanes were
+    empty so downstream agents (and the verifier) can react.
+    """
+    updates: dict = {}
+    empty_lanes = []
+    for key in _REPORT_KEYS:
+        if not (state.get(key) or "").strip():
+            updates[key] = _EMPTY_REPORT_PLACEHOLDER
+            empty_lanes.append(key)
+    if empty_lanes:
+        updates["empty_report_lanes"] = ", ".join(empty_lanes)
+    return updates
+
 
 def create_thesis_integrator(llm):
     """LLM node: unified thesis, assumption table, conflicts, valuation non-negotiables."""
@@ -18,9 +51,12 @@ def create_thesis_integrator(llm):
         instrument = build_instrument_context(state["company_of_interest"])
         trade_date = state["trade_date"]
 
+        guard_updates = _guard_empty_reports(state)
+
         if not get_config().get("enable_thesis_integrator", True):
             digest = build_analyst_evidence_digest(state)
             return {
+                **guard_updates,
                 "integrated_thesis_report": (
                     "## Unified thesis\n"
                     "_Thesis integrator LLM disabled; analyst digest follows._\n\n"
@@ -86,6 +122,6 @@ Produce the following sections with these EXACT markdown headings:
 Be concise; no new numbers unless they are recombinations of numbers already in the reports."""
 
         response = llm.invoke([HumanMessage(content=prompt)])
-        return {"integrated_thesis_report": response.content}
+        return {**guard_updates, "integrated_thesis_report": response.content}
 
     return thesis_integrator_node

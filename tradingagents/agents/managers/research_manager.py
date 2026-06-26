@@ -23,13 +23,19 @@ def create_research_manager(llm):
         evidence_digest = build_analyst_evidence_digest(state)
         verification_notes = (state.get("verification_notes") or "").strip()
         integrated_thesis = (state.get("integrated_thesis_report") or "").strip()
+        past_context = (state.get("past_context") or "").strip()
+        lessons_block = (
+            f"\n\n**Lessons from prior decisions and their realized outcomes (apply where relevant):**\n{past_context}\n"
+            if past_context
+            else ""
+        )
 
         investment_debate_state = state["investment_debate_state"]
 
         prompt = f"""As the Research Manager and debate facilitator, critically evaluate this round of debate and produce a decisive, forward-looking investment plan.
 
 {instrument_context}
-
+{lessons_block}
 ---
 
 **Verifier-lite (structural pre-checks):**

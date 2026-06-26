@@ -3,10 +3,12 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from tradingagents.agents.utils.agent_utils import (
     build_instrument_context,
     get_analyst_estimates,
+    get_earnings_calendar,
     get_earnings_transcript_highlights,
     get_language_instruction,
     get_macro_regime,
     get_news,
+    get_options_analytics,
     get_options_implied_move,
     get_peer_comparables,
     probability_weighted_price,
@@ -35,6 +37,8 @@ def create_forward_analyst(llm):
             get_macro_regime,
             get_sector_etf_trends,
             get_options_implied_move,
+            get_options_analytics,
+            get_earnings_calendar,
             get_news,
             get_sec_filing_highlights,
             get_sec_filing_sections,
@@ -52,15 +56,16 @@ Required process:
 1) Call `get_analyst_estimates` with the instrument ticker and trade date (`curr_date`) first.
 2) Call `get_peer_comparables` and `get_macro_regime`.
 3) Call `get_sector_etf_trends` using the most relevant sector/ETF implied by your findings.
-4) Optionally call `get_options_implied_move` for event-volatility context.
-5) Use `get_sec_filing_highlights` (10-K) to ground medium-term strategic assumptions in primary filing cadence.
-6) Call `get_sec_filing_sections` to fetch filing text from the SEC URL and extract forward-relevant evidence.
-7) Read in this order: MD&A -> Financial statements -> Footnotes -> Risk Factors -> Business context.
-8) Use `get_earnings_transcript_highlights` when available; if unavailable, state that limitation explicitly.
-9) Use `get_news` for corroboration of forward catalysts and risks.
-10) Use `evaluate_math_expression` and `implied_cagr` for implied growth, margin, or multiple math—do not rely on mental arithmetic alone.
-11) Use `probability_weighted_price` for explicit expected-value price synthesis from bull/base/bear targets.
-12) If `enable_valuation_sensitivity_tables` is on, include one `valuation_sensitivity_table` stress block.
+4) Call `get_options_implied_move` and `get_options_analytics` for event-volatility and positioning context (put/call OI, IV).
+5) Call `get_earnings_calendar` for the next earnings catalyst and recent surprise pattern.
+6) Use `get_sec_filing_highlights` (10-K) to ground medium-term strategic assumptions in primary filing cadence.
+7) Call `get_sec_filing_sections` to fetch filing text from the SEC URL and extract forward-relevant evidence.
+8) Read in this order: MD&A -> Financial statements -> Footnotes -> Risk Factors -> Business context.
+9) Use `get_earnings_transcript_highlights` when available; if unavailable, state that limitation explicitly.
+10) Use `get_news` for corroboration of forward catalysts and risks.
+11) Use `evaluate_math_expression` and `implied_cagr` for implied growth, margin, or multiple math—do not rely on mental arithmetic alone.
+12) Use `probability_weighted_price` for explicit expected-value price synthesis from bull/base/bear targets.
+13) If `enable_valuation_sensitivity_tables` is on, include one `valuation_sensitivity_table` stress block.
 
 Scenario playbook (must use):
 """

@@ -74,6 +74,11 @@ def get_stock_stats_indicators_window(
             "Usage: Capture quick shifts in momentum and potential entry points. "
             "Tips: Prone to noise in choppy markets; use alongside longer averages for filtering false signals."
         ),
+        "close_20_sma": (
+            "20 SMA: A short-to-medium trend line often used for support/resistance and Bollinger context. "
+            "Usage: Identify near-term trend and dynamic levels. "
+            "Tips: Combine with 50/200 SMA for multi-timeframe structure."
+        ),
         # MACD Related
         "macd": (
             "MACD: Computes momentum via differences of EMAs. "
@@ -127,6 +132,11 @@ def get_stock_stats_indicators_window(
             "MFI: The Money Flow Index is a momentum indicator that uses both price and volume to measure buying and selling pressure. "
             "Usage: Identify overbought (>80) or oversold (<20) conditions and confirm the strength of trends or reversals. "
             "Tips: Use alongside RSI or MACD to confirm signals; divergence between price and MFI can indicate potential reversals."
+        ),
+        "volume_20_sma": (
+            "Volume 20 SMA: Average daily volume over 20 sessions. "
+            "Usage: Confirm breakouts and trend moves when volume exceeds the average; flag weak moves on below-average volume. "
+            "Tips: Compare current volume to this baseline rather than raw volume alone."
         ),
     }
 

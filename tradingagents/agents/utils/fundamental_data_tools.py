@@ -81,18 +81,20 @@ def get_income_statement(
 def get_sec_filing_highlights(
     ticker: Annotated[str, "ticker symbol"],
     curr_date: Annotated[str, "current date you are trading at, yyyy-mm-dd"],
+    filing: Annotated[str, "filing form: 10-K (annual), 10-Q (quarterly), or 8-K (events)"] = "10-K",
 ) -> str:
-    """Retrieve latest SEC filing highlights (10-K only in v1) from API Ninjas."""
-    return route_to_vendor("get_sec_filing_highlights", ticker, curr_date)
+    """Retrieve latest SEC filing highlights (10-K / 10-Q / 8-K) from API Ninjas."""
+    return route_to_vendor("get_sec_filing_highlights", ticker, curr_date, filing)
 
 
 @tool
 def get_sec_filing_sections(
     ticker: Annotated[str, "ticker symbol"],
     curr_date: Annotated[str, "current date you are trading at, yyyy-mm-dd"],
+    filing: Annotated[str, "filing form: 10-K (annual), 10-Q (quarterly), or 8-K (events)"] = "10-K",
 ) -> str:
-    """Fetch latest 10-K URL from API Ninjas and extract key filing sections from the SEC HTML."""
-    return route_to_vendor("get_sec_filing_sections", ticker, curr_date)
+    """Fetch latest SEC filing URL (10-K / 10-Q / 8-K) and extract key sections from the HTML."""
+    return route_to_vendor("get_sec_filing_sections", ticker, curr_date, filing)
 
 
 @tool
@@ -102,3 +104,24 @@ def get_earnings_transcript_highlights(
 ) -> str:
     """Retrieve transcript highlights when provider exists (stub fallback otherwise)."""
     return route_to_vendor("get_earnings_transcript_highlights", ticker, curr_date)
+
+
+@tool
+def get_ownership_short_interest(
+    ticker: Annotated[str, "ticker symbol"],
+    curr_date: Annotated[str, "current date you are trading at, yyyy-mm-dd"],
+) -> str:
+    """Retrieve institutional ownership concentration and short-interest metrics.
+
+    Live snapshot; returns a skip notice in strict historical eval mode.
+    """
+    return route_to_vendor("get_ownership_short_interest", ticker, curr_date)
+
+
+@tool
+def get_earnings_calendar(
+    ticker: Annotated[str, "ticker symbol"],
+    curr_date: Annotated[str, "current date you are trading at, yyyy-mm-dd"],
+) -> str:
+    """Retrieve upcoming and recent earnings dates (catalyst timing / event risk)."""
+    return route_to_vendor("get_earnings_calendar", ticker, curr_date)

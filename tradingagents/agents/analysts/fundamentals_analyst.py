@@ -3,10 +3,12 @@ from tradingagents.agents.utils.agent_utils import (
     build_instrument_context,
     get_balance_sheet,
     get_cashflow,
+    get_earnings_calendar,
     get_earnings_transcript_highlights,
     get_fundamentals,
     get_income_statement,
     get_insider_transactions,
+    get_ownership_short_interest,
     get_sec_filing_highlights,
     get_sec_filing_sections,
     get_language_instruction,
@@ -31,6 +33,8 @@ def create_fundamentals_analyst(llm):
             get_cashflow,
             get_income_statement,
             get_insider_transactions,
+            get_ownership_short_interest,
+            get_earnings_calendar,
             get_sec_filing_highlights,
             get_sec_filing_sections,
             get_earnings_transcript_highlights,
@@ -51,9 +55,11 @@ Required process:
 6) Do not rely on metadata-only SEC rows for conclusions.
 7) Call `get_earnings_transcript_highlights` (or acknowledge stub/no data).
 8) Call `get_insider_transactions` to assess management conviction and governance signals.
-9) Use `evaluate_math_expression` and `implied_cagr` whenever you combine ratios, margins, or growth rates—do not chain arithmetic only in prose.
-10) If `enable_valuation_sensitivity_tables` is on, call `valuation_sensitivity_table` once for base/bull/bear valuation stress.
-11) Use evidence from all tools before writing your final report.
+9) Call `get_ownership_short_interest` for float, short interest, and institutional concentration.
+10) Call `get_earnings_calendar` for the next earnings date and recent surprise history (event risk).
+11) Use `evaluate_math_expression` and `implied_cagr` whenever you combine ratios, margins, or growth rates—do not chain arithmetic only in prose.
+12) If `enable_valuation_sensitivity_tables` is on, call `valuation_sensitivity_table` once for base/bull/bear valuation stress.
+13) Use evidence from all tools before writing your final report.
 
 Required report sections (use these exact headings):
 ## Executive Summary
@@ -82,7 +88,7 @@ Rubric:
 - Be nuanced: discuss both upside and downside, then conclude with the highest-conviction interpretation.
 
 Finish with a Markdown table named "Key Fundamental Evidence Table" that summarizes the most decision-relevant metrics, trend direction, and implication."""
-            + " Use tools: `get_fundamentals`, `get_balance_sheet`, `get_cashflow`, `get_income_statement`, `get_sec_filing_highlights`, `get_sec_filing_sections`, `get_earnings_transcript_highlights`, `get_insider_transactions`, `evaluate_math_expression`, `implied_cagr`, and optionally `valuation_sensitivity_table`."
+            + " Use tools: `get_fundamentals`, `get_balance_sheet`, `get_cashflow`, `get_income_statement`, `get_sec_filing_highlights`, `get_sec_filing_sections`, `get_earnings_transcript_highlights`, `get_insider_transactions`, `get_ownership_short_interest`, `get_earnings_calendar`, `evaluate_math_expression`, `implied_cagr`, and optionally `valuation_sensitivity_table`."
             + get_analysis_contract_suffix()
             + get_language_instruction()
         )

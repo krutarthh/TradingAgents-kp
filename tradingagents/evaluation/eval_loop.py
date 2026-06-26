@@ -79,6 +79,33 @@ def compute_forward_return_label(
     }
 
 
+def compute_trailing_return(
+    ticker: str,
+    trade_date: str,
+    lookback_days: int = 90,
+) -> Optional[float]:
+    """Point-in-time trailing raw return over ``lookback_days`` ending at ``trade_date``.
+
+    Uses only closes on or before the anchor (no look-ahead), so it is safe as a
+    momentum-baseline input for historical eval. Returns None if data is missing.
+    """
+    end_dt = datetime.strptime(trade_date, "%Y-%m-%d")
+    start_dt = end_dt - timedelta(days=lookback_days)
+    fetch_start = (start_dt - timedelta(days=7)).strftime("%Y-%m-%d")
+    fetch_end = (end_dt + timedelta(days=2)).strftime("%Y-%m-%d")
+    try:
+        hist = yf.Ticker(ticker).history(start=fetch_start, end=fetch_end)
+    except Exception:
+        return None
+    if hist is None or hist.empty:
+        return None
+    p0 = _closest_prior_close(hist, start_dt)
+    p1 = _closest_prior_close(hist, end_dt)
+    if p0 is None or p1 is None or p0 == 0:
+        return None
+    return (p1 - p0) / p0
+
+
 def compute_60d_label(
     ticker: str,
     trade_date: str,

@@ -26,6 +26,12 @@ def create_trader(llm):
         investment_plan = state["investment_plan"]
         forward_report = state.get("forward_report", "")
         evidence_digest = build_analyst_evidence_digest(state)
+        past_context = (state.get("past_context") or "").strip()
+        lessons_block = (
+            f"Lessons from prior decisions and realized outcomes (apply where relevant):\n{past_context}\n\n"
+            if past_context
+            else ""
+        )
 
         messages = [
             {
@@ -44,6 +50,7 @@ def create_trader(llm):
                     f"insights from current technical market trends, macroeconomic indicators, and "
                     f"social media sentiment. Use this plan as a foundation for evaluating your next "
                     f"trading decision.\n\nProposed Investment Plan: {investment_plan}\n\n"
+                    f"{lessons_block}"
                     f"{evidence_digest}\n\n"
                     f"Forward Scenarios and Secular Outlook (full forward report if any): {forward_report}\n\n"
                     "Requirements:\n"

@@ -41,6 +41,11 @@ DEFAULT_CONFIG = {
     # Debate and discussion settings
     "max_debate_rounds": 1,
     "max_risk_discuss_rounds": 1,
+    # Adaptive debate: when True, the bull/bear debate runs deeper while the two
+    # sides still disagree (up to adaptive_debate_max_rounds) and stops early on
+    # convergence. Default False preserves the fixed-depth behavior.
+    "adaptive_debate": True,
+    "adaptive_debate_max_rounds": 3,
     # LangGraph recursion_limit (one increment per node execution). Tool-heavy
     # analysts (SEC sections, fundamentals + calculators) can exceed 100 quickly.
     "max_recur_limit": 300,
@@ -52,6 +57,8 @@ DEFAULT_CONFIG = {
         "technical_indicators": "yfinance,alpha_vantage",
         "fundamental_data": "yfinance,alpha_vantage",
         "news_data": "yfinance,alpha_vantage",
+        "social_data": "stocktwits",
+        "ownership_data": "yfinance",
         "forward_data": "yfinance",
     },
     # Tool-level configuration (takes precedence over category-level)
@@ -59,8 +66,13 @@ DEFAULT_CONFIG = {
         # Example: "get_stock_data": "alpha_vantage",  # Override category default
         "get_sec_filing_highlights": "api_ninjas",
         "get_sec_filing_sections": "api_ninjas",
-        "get_earnings_transcript_highlights": "financial_modeling_prep,stub",
+        # Try FMP first (point-in-time dated rows), then Alpha Vantage, then stub.
+        "get_earnings_transcript_highlights": "financial_modeling_prep,alpha_vantage,stub",
+        # Point-in-time consensus via FMP when keyed, else live Yahoo snapshot.
+        "get_analyst_estimates": "financial_modeling_prep,yfinance",
         "get_fear_greed_index": "yfinance",
+        "get_news": "yfinance,finnhub,alpha_vantage",
+        "get_earnings_calendar": "yfinance,finnhub",
     },
     # LLM context: cap each analyst report inlined in bull/bear/risk prompts (None = no cap)
     "max_chars_per_report_in_debate": 12000,
@@ -71,6 +83,11 @@ DEFAULT_CONFIG = {
     "enable_verification_gate": True,
     "verification_max_retries": 1,
     "enable_verifier_plus_fail_block": True,
+    # Promote a badly-off scenario-probability sum from a warning to a hard fail.
+    "enable_verifier_numeric_reconciliation": True,
+    # On a hard verification fail, re-run just the blamed analyst lane
+    # (fundamentals/forward) instead of only the Thesis Integrator.
+    "verification_rerun_lane": True,
     "enable_valuation_sensitivity_tables": True,
     "enable_filing_transcript_tools": True,
     "eval_holding_days": 60,
@@ -78,6 +95,11 @@ DEFAULT_CONFIG = {
     # Historical eval: enforce point-in-time data (no live yfinance .info, FRED end dates, etc.)
     "eval_strict_temporal": False,
     "eval_cutoff_date": None,
+    # Live shadow book: append PM final_decision_signal rows to this CSV path (None = off).
+    "live_shadow_book_path": os.getenv(
+        "TRADINGAGENTS_LIVE_SHADOW_BOOK",
+        os.path.join(_TRADINGAGENTS_HOME, "live_shadow_book.csv"),
+    ),
     # Preferred analyst order: list "forward" last so consensus/macro are freshest before integration
     "recommended_analyst_order": ["market", "social", "news", "fundamentals", "forward"],
     # LangSmith: None = only env vars (LANGCHAIN_TRACING_V2); True/False forces on/off

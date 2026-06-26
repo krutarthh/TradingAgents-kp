@@ -7,14 +7,30 @@ from datetime import date
 from pathlib import Path
 from typing import Any, Dict, List
 
+# Rich-signal columns lifted from the structured PM decision (final_decision_signal).
+_SIGNAL_COLUMNS = (
+    "rating_score",
+    "directional_score",
+    "confidence",
+    "price_target",
+    "time_horizon",
+    "bull_case_target",
+    "base_case_target",
+    "bear_case_target",
+    "bull_probability",
+    "base_probability",
+    "bear_probability",
+    "trader_action",
+    "decision_consistency",
+    "rating_parse_failed",
+    "structured_fallback_used",
+)
+
 
 def _rating_bucket(rating: str) -> str:
-    r = (rating or "").strip().lower()
-    if r in ("buy", "overweight"):
-        return "bullish"
-    if r in ("sell", "underweight"):
-        return "bearish"
-    return "neutral"
+    from tradingagents.agents.utils.rating import rating_bucket
+
+    return rating_bucket(rating)
 
 
 def run_single_pipeline_eval(job: Dict[str, Any]) -> Dict[str, Any]:
@@ -34,7 +50,10 @@ def run_single_pipeline_eval(job: Dict[str, Any]) -> Dict[str, Any]:
     except ImportError:
         pass
 
-    from tradingagents.evaluation.eval_loop import join_forward_labels_for_tickers
+    from tradingagents.evaluation.eval_loop import (
+        compute_trailing_return,
+        join_forward_labels_for_tickers,
+    )
     from tradingagents.graph.trading_graph import TradingAgentsGraph
 
     ticker = str(job["ticker"]).strip().upper()
@@ -56,6 +75,9 @@ def run_single_pipeline_eval(job: Dict[str, Any]) -> Dict[str, Any]:
         "quick_think_llm": job.get("quick_think_llm", ""),
         "deep_think_llm": job.get("deep_think_llm", ""),
     }
+    for col in _SIGNAL_COLUMNS:
+        row[col] = ""
+
     labels = join_forward_labels_for_tickers(
         ticker,
         anchor,
@@ -65,12 +87,26 @@ def run_single_pipeline_eval(job: Dict[str, Any]) -> Dict[str, Any]:
     )
     row.update(labels)
 
+    # Point-in-time trailing return -> momentum baseline input (no look-ahead).
+    trailing = compute_trailing_return(ticker, anchor, lookback_days=90)
+    row["prior_return_trailing"] = trailing if trailing is not None else ""
+
     try:
         graph = TradingAgentsGraph(config=cfg, debug=False)
-        _final_state, rating_signal = graph.propagate(ticker, anchor)
+        final_state, rating_signal = graph.propagate(ticker, anchor)
         rating = rating_signal if isinstance(rating_signal, str) else str(rating_signal)
         row["rating"] = rating
         row["rating_bucket"] = _rating_bucket(rating)
+
+        signal = (final_state or {}).get("final_decision_signal") or {}
+        if signal.get("rating_bucket") and signal["rating_bucket"] != "unparsed":
+            # Authoritative bucket from the structured decision (avoids a false
+            # neutral when prose mentions a rating word before the label line).
+            row["rating_bucket"] = signal["rating_bucket"]
+        for col in _SIGNAL_COLUMNS:
+            val = signal.get(col)
+            if val is not None:
+                row[col] = val
     except Exception as exc:
         row["error"] = f"{type(exc).__name__}: {exc}"
         row["rating"] = ""
