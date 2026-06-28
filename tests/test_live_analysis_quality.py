@@ -116,3 +116,45 @@ def test_fmp_revision_note_detects_eps_up():
     joined = "\n".join(lines)
     assert "EPS avg" in joined
     assert "up" in joined.lower()
+
+
+def test_sec_edgar_highlights_aapl():
+    from tradingagents.dataflows.sec_edgar import get_sec_filing_highlights_edgar
+
+    out = get_sec_filing_highlights_edgar("AAPL", "2026-06-08", "10-K")
+    assert "SEC EDGAR" in out
+    assert "sec.gov/Archives/edgar" in out
+    assert "10-K" in out
+
+
+def test_route_to_vendor_news_falls_back_to_finnhub(monkeypatch):
+    from tradingagents.dataflows import interface
+
+    monkeypatch.setattr(
+        interface,
+        "get_vendor",
+        lambda category, method=None: "yfinance,finnhub,alpha_vantage",
+    )
+
+    def _empty_yahoo(*args, **kwargs):
+        raise DataVendorSkipped("Yahoo returned no news")
+
+    def _finnhub_ok(*args, **kwargs):
+        return "## AAPL News (Finnhub)\n\n### Headline one\nSummary.\n"
+
+    with patch.object(interface, "get_news_yfinance", side_effect=_empty_yahoo):
+        with patch.object(interface, "get_news_finnhub", side_effect=_finnhub_ok):
+            monkeypatch.setitem(interface.VENDOR_METHODS["get_news"], "yfinance", _empty_yahoo)
+            monkeypatch.setitem(interface.VENDOR_METHODS["get_news"], "finnhub", _finnhub_ok)
+            out = interface.route_to_vendor("get_news", "AAPL", "2026-05-25", "2026-06-08")
+    assert "[vendor=finnhub]" in out
+    assert "Headline one" in out
+
+
+def test_route_to_vendor_sec_prefers_edgar(monkeypatch):
+    from tradingagents.dataflows import interface
+
+    monkeypatch.setattr(interface, "get_vendor", lambda category, method=None: "sec_edgar,api_ninjas")
+    out = interface.route_to_vendor("get_sec_filing_highlights", "AAPL", "2026-06-08", "10-K")
+    assert "[vendor=sec_edgar]" in out
+    assert "sec.gov" in out

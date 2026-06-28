@@ -64,8 +64,8 @@ DEFAULT_CONFIG = {
     # Tool-level configuration (takes precedence over category-level)
     "tool_vendors": {
         # Example: "get_stock_data": "alpha_vantage",  # Override category default
-        "get_sec_filing_highlights": "api_ninjas",
-        "get_sec_filing_sections": "api_ninjas",
+        "get_sec_filing_highlights": "sec_edgar,api_ninjas",
+        "get_sec_filing_sections": "sec_edgar,api_ninjas",
         # Try FMP first (point-in-time dated rows), then Alpha Vantage, then stub.
         "get_earnings_transcript_highlights": "financial_modeling_prep,alpha_vantage,stub",
         # Point-in-time consensus via FMP when keyed, else live Yahoo snapshot.

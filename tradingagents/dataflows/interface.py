@@ -29,6 +29,10 @@ from .earnings_calendar import get_earnings_calendar_yfinance
 from .finnhub_news import get_earnings_calendar_finnhub, get_news_finnhub
 from .fmp_estimates import get_analyst_estimates_fmp
 from .alpha_vantage_transcripts import get_earnings_transcript_alpha_vantage
+from .sec_edgar import (
+    get_sec_filing_highlights_edgar,
+    get_sec_filing_sections_edgar,
+)
 from .api_ninjas_sec import (
     get_earnings_transcript_highlights_stub,
     get_sec_filing_highlights_ninjas,
@@ -154,9 +158,11 @@ VENDOR_METHODS = {
         "yfinance": get_yfinance_income_statement,
     },
     "get_sec_filing_highlights": {
+        "sec_edgar": get_sec_filing_highlights_edgar,
         "api_ninjas": get_sec_filing_highlights_ninjas,
     },
     "get_sec_filing_sections": {
+        "sec_edgar": get_sec_filing_sections_edgar,
         "api_ninjas": get_sec_filing_sections_ninjas,
     },
     "get_earnings_transcript_highlights": {

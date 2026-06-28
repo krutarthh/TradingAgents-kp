@@ -5,6 +5,7 @@ from datetime import datetime
 from dateutil.relativedelta import relativedelta
 
 from .stockstats_utils import yf_retry
+from .config import DataVendorSkipped
 from .temporal import is_strict_temporal
 
 
@@ -70,7 +71,7 @@ def get_news_yfinance(
         news = yf_retry(lambda: stock.get_news(count=20))
 
         if not news:
-            return f"No news found for {ticker}"
+            raise DataVendorSkipped(f"Yahoo returned no news for {ticker.upper()}")
 
         # Parse date range for filtering
         start_dt = datetime.strptime(start_date, "%Y-%m-%d")
@@ -98,12 +99,16 @@ def get_news_yfinance(
             filtered_count += 1
 
         if filtered_count == 0:
-            return f"No news found for {ticker} between {start_date} and {end_date}"
+            raise DataVendorSkipped(
+                f"Yahoo returned no news for {ticker.upper()} between {start_date} and {end_date}"
+            )
 
         return f"## {ticker} News, from {start_date} to {end_date}:\n\n{news_str}"
 
-    except Exception as e:
-        return f"Error fetching news for {ticker}: {str(e)}"
+    except DataVendorSkipped:
+        raise
+    except Exception as exc:
+        raise DataVendorSkipped(f"Yahoo news fetch failed for {ticker.upper()}: {exc}") from exc
 
 
 def get_global_news_yfinance(
@@ -159,7 +164,7 @@ def get_global_news_yfinance(
                 break
 
         if not all_news:
-            return f"No global news found for {curr_date}"
+            raise DataVendorSkipped(f"Yahoo returned no global news for {curr_date}")
 
         # Calculate date range
         curr_dt = datetime.strptime(curr_date, "%Y-%m-%d")
@@ -199,7 +204,14 @@ def get_global_news_yfinance(
                 news_str += f"Link: {link}\n"
             news_str += "\n"
 
+        if not news_str.strip():
+            raise DataVendorSkipped(
+                f"Yahoo returned no global news for {curr_date} in the last {look_back_days} days"
+            )
+
         return f"## Global Market News, from {start_date} to {curr_date}:\n\n{news_str}"
 
-    except Exception as e:
-        return f"Error fetching global news: {str(e)}"
+    except DataVendorSkipped:
+        raise
+    except Exception as exc:
+        raise DataVendorSkipped(f"Yahoo global news fetch failed: {exc}") from exc
