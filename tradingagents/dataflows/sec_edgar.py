@@ -82,7 +82,10 @@ def _load_ticker_map() -> Dict[str, int]:
             cik = entry.get("cik_str")
             if sym and cik is not None:
                 mapping[sym] = int(cik)
-        cache_set_json("sec_edgar", "company_tickers", mapping)
+        try:
+            cache_set_json("sec_edgar", "company_tickers", mapping)
+        except OSError:
+            pass
         return mapping
     return cached
 

@@ -5,9 +5,21 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import threading
 import time
 from pathlib import Path
 from typing import Any, Optional
+
+_locks_guard = threading.Lock()
+_key_locks: dict[tuple[str, str], threading.Lock] = {}
+
+
+def _lock_for(subdir: str, key: str) -> threading.Lock:
+    cache_key = (subdir, key)
+    with _locks_guard:
+        if cache_key not in _key_locks:
+            _key_locks[cache_key] = threading.Lock()
+        return _key_locks[cache_key]
 
 
 def _cache_root() -> Path:
@@ -47,7 +59,21 @@ def cache_get_json(subdir: str, key: str, ttl_seconds: int) -> Optional[Any]:
 def cache_set_json(subdir: str, key: str, data: Any) -> None:
     path = cache_subdir(subdir) / f"{key}.json"
     payload = {"_cached_at": time.time(), "data": data}
-    tmp = path.with_suffix(".tmp")
-    with open(tmp, "w", encoding="utf-8") as f:
-        json.dump(payload, f)
-    tmp.replace(path)
+    lock = _lock_for(subdir, key)
+    with lock:
+        tmp = path.with_name(f"{path.stem}.{os.getpid()}.{time.time_ns()}.tmp")
+        try:
+            with open(tmp, "w", encoding="utf-8") as f:
+                json.dump(payload, f)
+            os.replace(tmp, path)
+        except OSError:
+            # Another concurrent writer may have won; keep existing cache if present.
+            if path.exists():
+                return
+            with open(path, "w", encoding="utf-8") as f:
+                json.dump(payload, f)
+        finally:
+            try:
+                tmp.unlink(missing_ok=True)
+            except OSError:
+                pass

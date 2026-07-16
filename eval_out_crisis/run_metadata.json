@@ -1,5 +1,5 @@
 {
-  "run_id": "e9fb4e1b4acd",
+  "run_id": "c878502b8aa2",
   "universe_file": "tradingagents/evaluation/universe_crisis_acute_2000_2008.json",
   "llm_provider": "ollama",
   "quick_think_llm": "gemma4:31b-cloud",
@@ -29,9 +29,10 @@
     "LEN",
     "BAC"
   ],
-  "observable_through": "2026-05-14",
-  "eval_workers": 3,
+  "observable_through": "2026-05-17",
+  "eval_workers": 1,
   "research_depth": "shallow",
   "max_debate_rounds": 1,
-  "max_risk_discuss_rounds": 1
+  "max_risk_discuss_rounds": 1,
+  "eval_strict_temporal": true
 }
