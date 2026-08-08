@@ -1,0 +1,13 @@
+**Recommendation**: Overweight
+
+**Rationale**: The debate presents a clash between 'Technical Capitulation' (Bear) and 'Structural Pivot' (Bull). The Bear's strongest argument is the recent historic price collapse and the risk that the z17 cycle is a temporary spike. However, the Bull's argument carries more weight because the downside is fundamentally anchored by a robust TTM FCF of $13.1B and a 3.18% dividend yield, which makes a total collapse unlikely. The valuation (Forward P/E 16.25x) is significantly discounted relative to the sector, providing a high margin of safety for a company successfully refreshing its core infrastructure (Z-growth of 48%). While the technicals are currently bearish ('falling knife'), the fundamental dislocation is too great to ignore. The decision to 'Overweight' rather than 'Buy' reflects the need for a staged entry to avoid the immediate binary risk of the July 22 earnings print.
+
+**Strategic Actions**: Do not enter a full position before July 22 earnings. Execute a staged entry: 25% of intended position now to capture the dividend floor; 75% only after earnings confirm software growth $\ge 10\%$. If earnings show software growth $\le 5\%$, abort the entry and move to a 'Sell' or 'Underweight' stance. Target exit/trim levels at $260 (20x P/E rerating).
+
+**Secular Themes**: Enterprise AI Orchestration, Sovereign Cloud/Data Residency, Hybrid Cloud Transformation, Quantum Computing (Long-term Optionality)
+
+**Key Catalysts**: July 22 Earnings Report: Specifically the software revenue growth rate vs. the 10% target., Sovereign Cloud Contract Wins: High-profile adoption by global banks or governments validating the 'Sovereign Core' moat., 10-Year Treasury Movements: A drop below 4.0% would enhance the attractiveness of the dividend yield and growth rerating.
+
+**Key Risks**: Software Growth Stagnation: Growth $\le 5\%$ would confirm the 'Value Trap' narrative and break the AI pivot thesis., z17 Cycle Peak: The risk that mainframe strength is a one-time hardware spike rather than a sustainable cash-flow floor., Debt Burden: A Debt-to-Equity ratio of 211% leaves little room for error if FCF declines.
+
+**Multi-Horizon View**: Tactical (0-6 weeks): Extremely high volatility. Expect a binary move around July 22 earnings. Avoid aggressive entry until the floor is confirmed. 12-Month: Constructive recovery toward $240 as the market digests the July crash and validates software growth. 36-Month: Bullish potential toward $280-$350, driven by the transition to Agentic AI orchestration and early pricing of the 2029 Quantum milestone.

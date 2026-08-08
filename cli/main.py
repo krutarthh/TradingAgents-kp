@@ -30,6 +30,7 @@ from cli.models import AnalystType
 from cli.utils import *
 from cli.announcements import fetch_announcements, display_announcements
 from cli.config import CLI_DEFAULTS
+from cli.decision_chat import run_decision_chat
 from cli.stats_handler import StatsCallbackHandler
 
 console = Console()
@@ -1134,6 +1135,19 @@ def run_analysis(checkpoint: bool = False):
     display_choice = typer.prompt("\nDisplay full report on screen?", default="Y").strip().upper()
     if display_choice in ("Y", "YES", ""):
         display_complete_report(final_state)
+
+    # Chat about why the decision was made
+    chat_choice = typer.prompt(
+        "\nChat about this decision?", default="Y"
+    ).strip().upper()
+    if chat_choice in ("Y", "YES", ""):
+        run_decision_chat(
+            llm=graph.deep_thinking_llm,
+            final_state=final_state,
+            ticker=selections["ticker"],
+            analysis_date=selections["analysis_date"],
+            decision_label=decision,
+        )
 
 
 @app.command()
