@@ -94,6 +94,7 @@ def _system_prompt(briefing: str) -> str:
         "- Explain disagreements between bull/bear/risk analysts when relevant.\n"
         "- Keep answers concise unless the user asks for depth.\n"
         "- Do not give new buy/sell advice that contradicts the recorded decision unless the "
+        "- You can use the web search tool to find more information about the company when the user asks for it."
         "user explicitly asks you to critique it; then label critique as opinion on the briefing.\n\n"
         "=== BRIEFING START ===\n"
         f"{briefing}\n"
