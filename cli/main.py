@@ -1136,12 +1136,9 @@ def run_analysis(checkpoint: bool = False):
     if display_choice in ("Y", "YES", ""):
         display_complete_report(final_state)
 
-    # Chat about why the decision was made
-    chat_choice = typer.prompt(
-        "\nChat about this decision?", default="Y"
-    ).strip().upper()
-    if chat_choice in ("Y", "YES", ""):
-        run_decision_chat(
+
+
+    run_decision_chat(
             llm=graph.deep_thinking_llm,
             final_state=final_state,
             ticker=selections["ticker"],
