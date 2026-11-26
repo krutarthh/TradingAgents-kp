@@ -145,9 +145,15 @@ class OpenAIClient(BaseLLMClient):
         )
 
         # Native OpenAI: use Responses API for consistent behavior across
-        # all model families. Third-party providers use Chat Completions.
+        # all model families. Third-party providers (and OpenAI-compatible
+        # gateways reached via a custom base_url) use Chat Completions.
         if self.provider == "openai":
-            llm_kwargs["use_responses_api"] = True
+            # Newer langchain-openai auto-selects the Responses API for gpt-6*
+            # models with tools unless this is set explicitly, so pin it to
+            # False for gateways that only expose /chat/completions.
+            llm_kwargs["use_responses_api"] = (
+                not self.base_url or "api.openai.com" in self.base_url
+            )
 
         return NormalizedChatOpenAI(**llm_kwargs)
 

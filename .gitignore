@@ -230,3 +230,18 @@ eval_out_crisis/memory/
 
 # macOS
 .DS_Store
+
+#graphufy
+graphify-out
+
+#calude code
+.claude
+n/
+# Generated eval/backtest output (csv / md / json) — not source
+eval_out/**/*.csv
+eval_out/**/*.md
+eval_out/**/*.json
+eval_out_crisis/**/*.csv
+eval_out_crisis/**/*.md
+eval_out_crisis/**/*.json
+portfolio_eval_*/

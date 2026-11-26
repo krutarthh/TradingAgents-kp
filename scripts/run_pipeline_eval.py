@@ -103,6 +103,8 @@ def _merge_eval_config(
     cfg["results_dir"] = str(out_dir / "ta_results")
     cfg["memory_log_path"] = str(out_dir / "memory" / f"batch_{run_id}.md")
     cfg["eval_strict_temporal"] = True
+    # Historical replays must never contaminate the prospective live shadow book.
+    cfg["live_shadow_book_path"] = None
     return cfg
 
 

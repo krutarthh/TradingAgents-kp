@@ -15,6 +15,7 @@ from tradingagents.dataflows.yfinance_forward import (
     get_analyst_estimates_yfinance,
     get_options_implied_move_yfinance,
 )
+from tradingagents.dataflows.y_finance import get_YFin_data_online
 from tradingagents.dataflows.cnn_sentiment import get_fear_greed_index_cnn
 from tradingagents.dataflows.interface import route_to_vendor
 
@@ -24,6 +25,12 @@ def _reset_config():
     set_config({"eval_strict_temporal": False, "eval_cutoff_date": None})
     yield
     set_config({"eval_strict_temporal": False, "eval_cutoff_date": None})
+
+
+def test_stock_data_rejects_range_after_eval_cutoff():
+    set_config({"eval_strict_temporal": True, "eval_cutoff_date": "2020-01-10"})
+    with pytest.raises(ValueError, match="after cutoff"):
+        get_YFin_data_online("AAPL", "2020-01-01", "2020-01-11")
 
 
 def test_filter_observations_on_or_before():

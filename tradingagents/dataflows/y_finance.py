@@ -5,7 +5,13 @@ import pandas as pd
 import yfinance as yf
 import os
 from .stockstats_utils import StockstatsUtils, _clean_dataframe, yf_retry, load_ohlcv, filter_financials_by_date
-from .temporal import data_as_of_header, is_strict_temporal, parse_cutoff
+from .temporal import (
+    assert_range_end_on_or_before,
+    data_as_of_header,
+    eval_cutoff_date,
+    is_strict_temporal,
+    parse_cutoff,
+)
 
 def get_YFin_data_online(
     symbol: Annotated[str, "ticker symbol of the company"],
@@ -15,6 +21,9 @@ def get_YFin_data_online(
 
     datetime.strptime(start_date, "%Y-%m-%d")
     datetime.strptime(end_date, "%Y-%m-%d")
+    cutoff = eval_cutoff_date()
+    if cutoff:
+        assert_range_end_on_or_before(end_date, cutoff)
 
     # Create ticker object
     ticker = yf.Ticker(symbol.upper())

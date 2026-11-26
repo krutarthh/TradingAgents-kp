@@ -1,1 +1,0 @@
-OK: no structural issues flagged by verifier-plus.
