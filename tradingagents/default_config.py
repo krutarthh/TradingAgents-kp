@@ -31,6 +31,8 @@ DEFAULT_CONFIG = {
     # Provider-specific thinking configuration
     "google_thinking_level": None,      # "high", "minimal", etc.
     "openai_reasoning_effort": None,    # "medium", "high", "low"
+    "deep_reasoning_effort": None,      # overrides openai_reasoning_effort for the deep model
+    "quick_reasoning_effort": None,     # overrides openai_reasoning_effort for the quick model
     "anthropic_effort": None,           # "high", "medium", "low"
     # Checkpoint/resume: when True, LangGraph saves state after each node
     # so a crashed run can resume from the last successful step.

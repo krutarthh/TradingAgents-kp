@@ -469,8 +469,21 @@ def update_display(layout, spinner_text=None, stats_handler=None, start_time=Non
     layout["footer"].update(Panel(stats_table, border_style="grey50"))
 
 
-def get_user_selections():
-    """Get all user selections before starting the analysis display."""
+def get_user_selections(overrides: Optional[dict] = None):
+    """Get all user selections before starting the analysis display.
+
+    `overrides` holds CLI-flag values (provider, backend_url, quick_model,
+    deep_model, quick_effort, deep_effort); unset entries fall back to CLI_DEFAULTS.
+    """
+    ov = {k: v for k, v in (overrides or {}).items() if v is not None}
+    provider = ov.get("provider", CLI_DEFAULTS["llm_provider"])
+    backend_url = ov.get("backend_url", CLI_DEFAULTS["backend_url"])
+    if "provider" in ov and "backend_url" not in ov:
+        backend_url = None  # don't leak the default gateway URL to another provider
+    quick_model = ov.get("quick_model", CLI_DEFAULTS["quick_think_llm"])
+    deep_model = ov.get("deep_model", CLI_DEFAULTS["deep_think_llm"])
+    quick_label = quick_model + (f"/{ov['quick_effort']}" if "quick_effort" in ov else "")
+    deep_label = deep_model + (f"/{ov['deep_effort']}" if "deep_effort" in ov else "")
     # Display ASCII art welcome message
     with open(Path(__file__).parent / "static" / "welcome.txt", "r", encoding="utf-8") as f:
         welcome_ascii = f.read()
@@ -520,7 +533,7 @@ def get_user_selections():
 
     analysis_date = datetime.datetime.now().strftime("%Y-%m-%d")
     console.print(
-        f"[dim]Language: English · Analysts: all · Depth: Medium · Model: {CLI_DEFAULTS['quick_think_llm']} · Date: {analysis_date}[/dim]\n"
+        f"[dim]Language: English · Analysts: all · Depth: Medium · Quick: {quick_label} · Deep: {deep_label} · Date: {analysis_date}[/dim]\n"
     )
 
     return {
@@ -528,10 +541,12 @@ def get_user_selections():
         "analysis_date": analysis_date,
         "analysts": CLI_DEFAULTS["analysts"],
         "research_depth": CLI_DEFAULTS["research_depth"],
-        "llm_provider": CLI_DEFAULTS["llm_provider"],
-        "backend_url": CLI_DEFAULTS["backend_url"],
-        "shallow_thinker": CLI_DEFAULTS["quick_think_llm"],
-        "deep_thinker": CLI_DEFAULTS["deep_think_llm"],
+        "llm_provider": provider,
+        "backend_url": backend_url,
+        "shallow_thinker": quick_model,
+        "deep_thinker": deep_model,
+        "quick_reasoning_effort": ov.get("quick_effort"),
+        "deep_reasoning_effort": ov.get("deep_effort"),
         "google_thinking_level": None,
         "openai_reasoning_effort": None,
         "anthropic_effort": None,
@@ -866,9 +881,9 @@ def format_tool_args(args, max_length=80) -> str:
         return result[:max_length - 3] + "..."
     return result
 
-def run_analysis(checkpoint: bool = False):
+def run_analysis(checkpoint: bool = False, overrides: Optional[dict] = None):
     # First get all user selections
-    selections = get_user_selections()
+    selections = get_user_selections(overrides)
 
     # Create config with selected research depth
     config = DEFAULT_CONFIG.copy()
@@ -882,6 +897,8 @@ def run_analysis(checkpoint: bool = False):
     config["google_thinking_level"] = selections.get("google_thinking_level")
     config["openai_reasoning_effort"] = selections.get("openai_reasoning_effort")
     config["anthropic_effort"] = selections.get("anthropic_effort")
+    config["quick_reasoning_effort"] = selections.get("quick_reasoning_effort")
+    config["deep_reasoning_effort"] = selections.get("deep_reasoning_effort")
     config["output_language"] = selections.get("output_language", "English")
     config["checkpoint_enabled"] = checkpoint
 
@@ -1147,6 +1164,9 @@ def run_analysis(checkpoint: bool = False):
         )
 
 
+EFFORT_LEVELS = ("none", "low", "medium", "high", "xhigh")
+
+
 @app.command()
 def analyze(
     checkpoint: bool = typer.Option(
@@ -1159,12 +1179,37 @@ def analyze(
         "--clear-checkpoints",
         help="Delete all saved checkpoints before running (force fresh start).",
     ),
+    model: Optional[str] = typer.Option(
+        None, "--model", help="Model ID for both quick and deep LLMs (overridden by --quick-model/--deep-model)."
+    ),
+    quick_model: Optional[str] = typer.Option(None, "--quick-model", help="Model ID for the quick-thinking LLM."),
+    deep_model: Optional[str] = typer.Option(None, "--deep-model", help="Model ID for the deep-thinking LLM."),
+    provider: Optional[str] = typer.Option(
+        None, "--provider", help="LLM provider (openai, ollama, anthropic, google, ...). Resets backend URL unless --backend-url is given."
+    ),
+    backend_url: Optional[str] = typer.Option(None, "--backend-url", help="Override the LLM API base URL."),
+    effort: Optional[str] = typer.Option(
+        None, "--effort", help="Reasoning effort for both LLMs: none|low|medium|high|xhigh (openai provider)."
+    ),
+    quick_effort: Optional[str] = typer.Option(None, "--quick-effort", help="Reasoning effort for the quick LLM."),
+    deep_effort: Optional[str] = typer.Option(None, "--deep-effort", help="Reasoning effort for the deep LLM."),
 ):
     if clear_checkpoints:
         from tradingagents.graph.checkpointer import clear_all_checkpoints
         n = clear_all_checkpoints(DEFAULT_CONFIG["data_cache_dir"])
         console.print(f"[yellow]Cleared {n} checkpoint(s).[/yellow]")
-    run_analysis(checkpoint=checkpoint)
+    for flag, val in (("--effort", effort), ("--quick-effort", quick_effort), ("--deep-effort", deep_effort)):
+        if val is not None and val not in EFFORT_LEVELS:
+            raise typer.BadParameter(f"{val!r} is not one of {', '.join(EFFORT_LEVELS)}", param_hint=flag)
+    overrides = {
+        "provider": provider,
+        "backend_url": backend_url,
+        "quick_model": quick_model or model,
+        "deep_model": deep_model or model,
+        "quick_effort": quick_effort or effort,
+        "deep_effort": deep_effort or effort,
+    }
+    run_analysis(checkpoint=checkpoint, overrides=overrides)
 
 
 if __name__ == "__main__":

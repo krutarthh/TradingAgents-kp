@@ -103,17 +103,25 @@ class TradingAgentsGraph:
         if self.callbacks:
             llm_kwargs["callbacks"] = self.callbacks
 
+        # Optional per-model OpenAI reasoning effort overrides (deep vs quick).
+        deep_kwargs, quick_kwargs = dict(llm_kwargs), dict(llm_kwargs)
+        if self.config.get("llm_provider", "").lower() == "openai":
+            if self.config.get("deep_reasoning_effort"):
+                deep_kwargs["reasoning_effort"] = self.config["deep_reasoning_effort"]
+            if self.config.get("quick_reasoning_effort"):
+                quick_kwargs["reasoning_effort"] = self.config["quick_reasoning_effort"]
+
         deep_client = create_llm_client(
             provider=self.config["llm_provider"],
             model=self.config["deep_think_llm"],
             base_url=self.config.get("backend_url"),
-            **llm_kwargs,
+            **deep_kwargs,
         )
         quick_client = create_llm_client(
             provider=self.config["llm_provider"],
             model=self.config["quick_think_llm"],
             base_url=self.config.get("backend_url"),
-            **llm_kwargs,
+            **quick_kwargs,
         )
 
         self.deep_thinking_llm = deep_client.get_llm()
